@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra Pamięciowa</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome (dla ikon na kartach) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tone.js (dla efektów dźwiękowych) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            /* ZMIANA: Zastąpiono 'transparent' nowym, animowanym tłem gradientowym */
+            background: linear-gradient(-45deg, #0f172a, #0c2a4c, #1a1a1a, #0c2a4c); /* Ciemny błękit, granat, czerń */
+            background-size: 400% 400%;
+            animation: ambientGradient 15s ease infinite;
+        }
+
+        /* --- NOWA ANIMACJA: Ambient Gradient --- */
+        @keyframes ambientGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* --- Koniec nowych styli --- */
+
+        /* --- USUNIĘTO STYL: #ambient-canvas --- */
+
+
+        /* --- Style Karty i Animacja 3D --- */
+        
+        .card {
+            width: 80px;
+            height: 80px;
+            perspective: 1000px; /* Perspektywa 3D */
+            cursor: pointer;
+            flex-shrink: 0; 
+        }
+        @media (min-width: 420px) {
+            .card {
+                width: 90px;
+                height: 90px;
+            }
+        }
+        @media (min-width: 500px) {
+            .card {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .card.is-flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Safari */
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 2rem; /* 32px */
+        }
+        @media (min-width: 500px) {
+            .card-face {
+                font-size: 2.5rem; /* 40px */
+            }
+        }
+
+        /* Kolor przodu karty (pytajnik) będzie ustawiany dynamicznie przez JS */
+        .card-front {
+            color: white;
+        }
+        
+        .card-back {
+            background-color: #333;
+            color: #fff;
+            transform: rotateY(180deg);
+        }
+
+        .card.is-matched {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        /* Przeniesiono animację trzęsienia na główny element .card */
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-6px); }
+          40%, 80% { transform: translateX(6px); }
+        }
+        
+        .card.is-shaking {
+          animation: shake 0.4s ease-in-out;
+        }
+
+
+        .modal-base {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #game-board {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; 
+            gap: 0.75rem; /* 12px */
+        }
+        @media (min-width: 500px) {
+            #game-board {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1rem; /* 16px */
+            }
+        }
+        /* Nowa klasa do obsługi 5 kolumn na Poziomie 3 */
+        @media (min-width: 640px) {
+            #game-board.level-3 {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+
+        .heart-icon.lost {
+            opacity: 0.2;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* --- NOWE STYLE: Przełącznik (Toggle) --- */
+        #sound-toggle {
+            transition: background-color 0.3s ease;
+        }
+        #sound-toggle-knob {
+            transition: transform 0.3s ease;
+        }
+        #sound-toggle.is-active {
+            background-color: #16a34a; /* green-600 */
+        }
+        #sound-toggle.is-active #sound-toggle-knob {
+            transform: translateX(24px); /* 1.5rem */
+        }
+
+    </style>
+</head>
+<body class="text-white min-h-screen flex items-center justify-center p-4">
+
+    <!-- USUNIĘTO: Tło Canvas -->
+    <!-- <canvas id="ambient-canvas"></canvas> -->
+
+    <div class="w-full max-w-xl mx-auto bg-gray-900/50 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-2xl">
+        
+        <div class="flex justify-center items-center mb-4 relative">
+            <h1 class="text-4xl font-bold text-center">Gra Pamięciowa</h1>
+            <button id="settings-button" class="absolute right-0 top-0 p-2 text-gray-400 hover:text-white transition-colors" aria-label="Ustawienia">
+                <i class="fa-solid fa-gear text-2xl"></i>
+            </button>
+        </div>
+        
+        <div class="flex flex-wrap justify-around items-center bg-gray-800/50 p-4 rounded-lg mb-6 shadow-lg gap-4">
+            <div class="text-lg text-center">
+                Poziom: 
+                <span id="level-count" class="font-bold text-2xl text-sky-400">1</span>
+                <span id="level-theme" class="block text-sm text-gray-400">Natura</span>
+            </div>
+            
+            <div class="text-lg text-center">
+                Życia:
+                <div id="health-display" class="flex justify-center space-x-1 mt-1 text-red-500 text-xl">
+                    <!-- Serca będą generowane przez JavaScript -->
+                </div>
+            </div>
+
+            <div class="text-lg text-center">
+                Ruchy: 
+                <span id="moves-count" class="font-bold text-2xl text-sky-400">0</span>
+            </div>
+            
+            <div class="text-lg text-center">
+                Rekord: 
+                <span id="best-score-count" class="font-bold text-2xl text-yellow-400">-</span>
+            </div>
+
+            <button id="reset-button" class="px-5 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors shadow-md">
+                Resetuj
+            </button>
+        </div>
+
+        <div id="game-board">
+            <!-- Karty będą generowane przez JavaScript -->
+        </div>
+    </div>
+
+    <!-- Modal Wygranej/Przegranej -->
+    <div id="win-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50 modal-base">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full transform transition-all scale-95 opacity-0" id="win-modal-content">
+            <h2 id="modal-title" class="text-4xl font-bold text-sky-400 mb-4">Gratulacje!</h2>
+            
+            <p id="modal-highscore-message" class="text-lg text-yellow-400 mb-4 hidden"></p>
+            
+            <p id="modal-message" class="text-xl text-gray-300 mb-2">
+                Udało Ci się wygrać w <span id="modal-moves" class="font-bold text-white">0</span> ruchach!
+            </p>
+            <p id="modal-submessage" class="text-gray-400 mb-6">Gotowy na kolejną rundę?</p>
+            <button id="modal-next-button" class="w-full px-6 py-3 bg-sky-600 text-white font-bold text-lg rounded-lg hover:bg-sky-700 transition-colors shadow-lg">
+                Zagraj Ponownie
+            </button>
+        </div>
+    </div>
+    
+    <!-- Modal Ustawień -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50 modal-base">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-95 opacity-0" id="settings-modal-content">
+            <h2 class="text-3xl font-bold text-sky-400 mb-6">Ustawienia</h2>
+            
+            <div class="flex justify-between items-center">
+                <span class="text-xl text-gray-300">Dźwięki gry</span>
+                <!-- Prosty toggle switch -->
+                <button id="sound-toggle" class="relative w-14 h-8 flex items-center bg-gray-600 rounded-full p-1 transition-colors">
+                    <div id="sound-toggle-knob" class="w-6 h-6 bg-white rounded-full shadow-md transform transition-transform"></div>
+                </button>
+            </div>
+
+            <button id="settings-close-button" class="w-full mt-8 px-6 py-3 bg-sky-600 text-white font-bold text-lg rounded-lg hover:bg-sky-700 transition-colors shadow-lg">
+                Gotowe
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameBoard = document.getElementById('game-board');
+            const movesCountEl = document.getElementById('moves-count');
+            const resetButton = document.getElementById('reset-button');
+            const levelCountEl = document.getElementById('level-count');
+            const healthDisplayEl = document.getElementById('health-display');
+            
+            const levelThemeEl = document.getElementById('level-theme');
+            const bestScoreCountEl = document.getElementById('best-score-count');
+
+            // Elementy Modala Wygranej
+            const winModal = document.getElementById('win-modal');
+            const winModalContent = document.getElementById('win-modal-content');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalSubmessage = document.getElementById('modal-submessage');
+            const modalMovesEl = document.getElementById('modal-moves');
+            const modalNextButton = document.getElementById('modal-next-button');
+            const modalHighScoreMessageEl = document.getElementById('modal-highscore-message');
+            
+            const settingsButton = document.getElementById('settings-button');
+            const settingsModal = document.getElementById('settings-modal');
+            const settingsModalContent = document.getElementById('settings-modal-content');
+            const soundToggle = document.getElementById('sound-toggle');
+            const soundToggleKnob = document.getElementById('sound-toggle-knob');
+            const settingsCloseButton = document.getElementById('settings-close-button');
+
+
+            // --- Inicjalizacja Dźwięku (Tone.js) ---
+            let soundsInitialized = false;
+            let synth, polySynth;
+            let isMuted = false; 
+            const sounds = {
+                flip: 'C5',
+                match: ['E5', 'G5', 'C6'],
+                noMatch: 'C#4',
+                win: ['C4', 'E4', 'G4', 'C5'],
+                gameOver: ['A2', 'E3', 'C3']
+            };
+            
+            async function initAudio() {
+                if (soundsInitialized || !window.Tone || isMuted) return;
+                try {
+                    await Tone.start();
+                    synth = new Tone.Synth().toDestination();
+                    polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                    soundsInitialized = true;
+                } catch (e) {
+                    console.error("Nie można uruchomić audio:", e);
+                }
+            }
+            // --- Koniec sekcji Dźwięku ---
+
+            // --- Funkcje Obsługi Ustawień ---
+            function openSettingsModal() {
+                settingsModal.classList.remove('opacity-0', 'invisible');
+                setTimeout(() => {
+                    settingsModalContent.classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            }
+
+            function closeSettingsModal() {
+                settingsModalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    settingsModal.classList.add('opacity-0', 'invisible');
+                }, 300); // Czekaj na animację
+            }
+
+            function toggleSound() {
+                isMuted = !isMuted;
+                updateSoundToggleVisuals();
+                localStorage.setItem('memorySoundMuted', isMuted);
+                
+                if (!isMuted && !soundsInitialized) {
+                    initAudio();
+                }
+            }
+
+            function updateSoundToggleVisuals() {
+                if (isMuted) {
+                    soundToggle.classList.remove('is-active');
+                } else {
+                    soundToggle.classList.add('is-active');
+                }
+            }
+
+            function loadSettings() {
+                const savedMuteSetting = localStorage.getItem('memorySoundMuted');
+                isMuted = (savedMuteSetting === 'true');
+                updateSoundToggleVisuals();
+            }
+            // --- Koniec Funkcji Ustawień ---
+
+
+            // --- Logika Poziomów Tematycznych ---
+            const themeIcons = {
+                nature: [
+                    'fa-leaf', 'fa-seedling', 'fa-tree', 'fa-sun', 'fa-moon', 
+                    'fa-cloud', 'fa-mountain', 'fa-water', 'fa-snowflake', 'fa-fire'
+                ],
+                transport: [
+                    'fa-car', 'fa-bicycle', 'fa-plane', 'fa-rocket', 'fa-ship', 
+                    'fa-bus', 'fa-motorcycle', 'fa-train-tram', 'fa-helicopter', 'fa-truck'
+                ],
+                animals: [
+                    'fa-dog', 'fa-cat', 'fa-fish', 'fa-dove', 'fa-hippo', 
+                    'fa-horse', 'fa-frog', 'fa-spider', 'fa-bugs', 'fa-otter'
+                ]
+            };
+            
+            const levelConfig = {
+                1: { pairs: 6, theme: "Natura", color: "#16a34a", icons: themeIcons.nature },
+                2: { pairs: 8, theme: "Transport", color: "#0ea5e9", icons: themeIcons.transport },
+                3: { pairs: 10, theme: "Zwierzęta", color: "#f97316", icons: themeIcons.animals }
+            };
+            const maxLevel = 3;
+            let currentLevel = 1;
+
+            // --- Logika Rekordów (localStorage) ---
+            let highScores = { 1: Infinity, 2: Infinity, 3: Infinity };
+
+            function loadHighScores() {
+                const storedScores = localStorage.getItem('memoryHighScores');
+                if (storedScores) {
+                    const parsedScores = JSON.parse(storedScores);
+                    highScores = { ...highScores, ...parsedScores };
+                }
+                for (let level in levelConfig) {
+                    if (!highScores[level]) {
+                        highScores[level] = Infinity;
+                    }
+                }
+            }
+
+            function saveHighScores() {
+                localStorage.setItem('memoryHighScores', JSON.stringify(highScores));
+            }
+
+            function updateHighScoreDisplay() {
+                const currentBest = highScores[currentLevel];
+                bestScoreCountEl.textContent = (currentBest === Infinity) ? '-' : currentBest;
+            }
+            // --- Koniec logiki Rekordów ---
+
+
+            const maxHealth = 5;
+            let currentHealth = maxHealth;
+            let isGameOver = false;
+
+            let cardIcons = [];
+            let flippedCards = []; 
+            let moves = 0;
+            let matchedPairs = 0;
+            let totalPairs = 0;
+            let canFlip = true; 
+
+            // --- Niezawodne tasowanie Fisher-Yates ---
+            function shuffle(array) {
+                let currentIndex = array.length,  randomIndex;
+                while (currentIndex != 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [
+                        array[randomIndex], array[currentIndex]];
+                }
+                return array;
+            }
+
+            function createBoard() {
+                gameBoard.innerHTML = '';
+                flippedCards = [];
+                moves = 0;
+                matchedPairs = 0;
+                canFlip = true;
+                isGameOver = false;
+                currentHealth = maxHealth;
+                updateHealthDisplay();
+                
+                movesCountEl.textContent = '0';
+                
+                const config = levelConfig[currentLevel];
+                levelCountEl.textContent = currentLevel;
+                levelThemeEl.textContent = config.theme;
+                updateHighScoreDisplay(); 
+
+                totalPairs = config.pairs;
+                const iconsForLevel = config.icons.slice(0, totalPairs);
+                cardIcons = [...iconsForLevel, ...iconsForLevel];
+
+                winModal.classList.add('opacity-0', 'invisible');
+                winModalContent.classList.add('scale-95', 'opacity-0');
+
+                shuffle(cardIcons); 
+
+                gameBoard.classList.remove('level-3');
+                if (currentLevel === 3) {
+                    gameBoard.classList.add('level-3');
+                }
+                
+                cardIcons.forEach(icon => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    card.dataset.icon = icon; 
+                    card.innerHTML = `
+                        <div class="card-inner">
+                            <div class="card-face card-front">
+                                <i class="fa-solid fa-question"></i>
+                            </div>
+                            <div class="card-face card-back">
+                                <i class="fa-solid ${icon}"></i>
+                            </div>
+                        </div>
+                    `;
+                    card.querySelector('.card-front').style.backgroundColor = config.color;
+                    card.addEventListener('click', handleCardClick);
+                    gameBoard.appendChild(card);
+                });
+            }
+
+            function handleCardClick(event) {
+                if (!soundsInitialized && !isMuted) initAudio();
+                
+                if (!canFlip || isGameOver) return;
+                const clickedCard = event.currentTarget;
+                if (clickedCard.classList.contains('is-flipped') || clickedCard.classList.contains('is-matched')) {
+                    return;
+                }
+                
+                clickedCard.classList.add('is-flipped');
+                flippedCards.push(clickedCard);
+                
+                if(soundsInitialized && !isMuted) synth.triggerAttackRelease(sounds.flip, '8n');
+                
+                if (flippedCards.length === 2) {
+                    canFlip = false;
+                    incrementMoves();
+                    setTimeout(checkForMatch, 600);
+                }
+            }
+            
+            function incrementMoves() {
+                moves++;
+                movesCountEl.textContent = moves;
+            }
+
+            function checkForMatch() {
+                const [cardOne, cardTwo] = flippedCards;
+                if (cardOne.dataset.icon === cardTwo.dataset.icon) {
+                    // Para!
+                    cardOne.classList.add('is-matched');
+                    cardTwo.classList.add('is-matched');
+                    matchedPairs++;
+                    if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.match, '8n', Tone.now() + 0.1);
+                    checkforWin(); 
+                    flippedCards = []; 
+                    canFlip = true;
+                } else {
+                    // Nie para - UTRATA ŻYCIA
+                    loseHealth(); 
+                    if(soundsInitialized && !isMuted) synth.triggerAttackRelease(sounds.noMatch, '8n', Tone.now() + 0.1);
+                    
+                    cardOne.classList.add('is-shaking');
+                    cardTwo.classList.add('is-shaking');
+                    
+                    if (!isGameOver) {
+                        setTimeout(() => {
+                            cardOne.classList.remove('is-shaking');
+                            cardTwo.classList.remove('is-shaking');
+                            cardOne.classList.remove('is-flipped');
+                            cardTwo.classList.remove('is-flipped');
+                            flippedCards = []; 
+                            canFlip = true;
+                        }, 1000); 
+                    }
+                }
+            }
+
+            function loseHealth() {
+                currentHealth--;
+                updateHealthDisplay();
+                if (currentHealth === 0) {
+                    isGameOver = true;
+                    canFlip = false;
+                    setTimeout(showGameOverModal, 500);
+                }
+            }
+
+            function updateHealthDisplay() {
+                healthDisplayEl.innerHTML = '';
+                for (let i = 0; i < maxHealth; i++) {
+                    const heart = document.createElement('i');
+                    heart.classList.add('fa-solid', 'fa-heart', 'heart-icon');
+                    if (i >= currentHealth) {
+                        heart.classList.add('lost');
+                    }
+                    healthDisplayEl.appendChild(heart);
+                }
+            }
+            
+            function showGameOverModal() {
+                if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.gameOver, '4n');
+
+                modalTitle.textContent = "Koniec Gry!";
+                modalTitle.classList.remove('text-sky-400');
+                modalTitle.classList.add('text-red-500');
+                
+                modalMessage.textContent = `Zabrakło Ci żyć na poziomie ${currentLevel}.`;
+                modalSubmessage.textContent = "Chcesz spróbować jeszcze raz?";
+                modalHighScoreMessageEl.classList.add('hidden'); 
+                
+                modalNextButton.textContent = "Spróbuj Ponownie";
+                modalNextButton.classList.remove('bg-sky-600', 'hover:bg-sky-700');
+                modalNextButton.classList.add('bg-red-600', 'hover:bg-red-700');
+
+                winModal.classList.remove('opacity-0', 'invisible');
+                setTimeout(() => {
+                    winModalContent.classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            }
+
+            function checkforWin() {
+                if (isGameOver) return; 
+                if (matchedPairs === totalPairs) {
+                    canFlip = false;
+                    setTimeout(showWinModal, 500); 
+                }
+            }
+
+            function showWinModal() {
+                if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.win, '4n');
+                
+                let newRecord = false;
+                if (moves < highScores[currentLevel]) {
+                    highScores[currentLevel] = moves;
+                    saveHighScores();
+                    newRecord = true;
+                }
+                updateHighScoreDisplay(); 
+
+                if (newRecord) {
+                    modalHighScoreMessageEl.textContent = `Nowy Rekord: ${moves} ruchów!`;
+                } else {
+                    modalHighScoreMessageEl.textContent = `Twój rekord: ${highScores[currentLevel]} ruchów.`;
+                }
+                modalHighScoreMessageEl.classList.remove('hidden');
+
+                modalTitle.classList.remove('text-red-500');
+                modalTitle.classList.add('text-sky-400');
+                modalNextButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+                modalNextButton.classList.add('bg-sky-600', 'hover:bg-sky-700');
+
+                modalMessage.innerHTML = `Udało Ci się w <span class="font-bold text-white">${moves}</span> ruchach!`;
+
+                if (currentLevel < maxLevel) {
+                    modalTitle.textContent = `Poziom ${currentLevel} ukończony!`;
+                    modalSubmessage.textContent = "Gotowy na następne wyzwanie?";
+                    modalNextButton.textContent = "Następny Poziom";
+                } else {
+                    modalTitle.textContent = "Gratulacje!";
+                    modalSubmessage.textContent = "Ukończyłeś całą grę!";
+                    modalNextButton.textContent = "Zagraj Ponownie";
+                }
+
+                winModal.classList.remove('opacity-0', 'invisible');
+                setTimeout(() => {
+                    winModalContent.classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            }
+            
+            function handleModalClick() {
+                if (isGameOver) {
+                    isGameOver = false; 
+                } else if (currentLevel < maxLevel) {
+                    currentLevel++; 
+                } else {
+                    currentLevel = 1; 
+                }
+                createBoard();
+            }
+
+            // --- Inicjalizacja Gry ---
+            loadHighScores(); 
+            loadSettings(); 
+            createBoard();
+            
+            resetButton.addEventListener('click', createBoard);
+            modalNextButton.addEventListener('click', handleModalClick);
+            
+            settingsButton.addEventListener('click', openSettingsModal);
+            settingsCloseButton.addEventListener('click', closeSettingsModal);
+            soundToggle.addEventListener('click', toggleSound);
+
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    closeSettingsModal();
+                }
+            });
+
+
+            // --- USUNIĘTO SKRYPT: Animacja tła "Starfield" ---
+            // --- SKRYPT ZASTĄPIONY PRZEZ ANIMACJĘ CSS W BODY ---
+
+        });
+    </script>
+</body>
+</html>
