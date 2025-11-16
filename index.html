@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- ZMIANA: Tytuł na bardziej ogólny -->
-    <title>Gra Pamięciowa</title>
+    <title>Gra Pamięciowa (1 i 2 Graczy)</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,6 +25,8 @@
             background: linear-gradient(-45deg, #0f172a, #0c2a4c, #1a1a1a, #0c2a4c);
             background-size: 400% 400%;
             animation: ambientGradient 15s ease infinite;
+            /* Zapobiegaj przewijaniu, gdy canvas jest większy */
+            overflow: hidden; 
         }
 
         @keyframes ambientGradient {
@@ -55,7 +56,6 @@
                 height: 100px;
             }
         }
-        /* ZMIANA: Mniejsze karty dla największych plansz */
         @media (min-width: 768px) {
             .level-mp-4 .card, .level-mp-5 .card {
                 width: 90px;
@@ -100,7 +100,6 @@
                 font-size: 2.5rem;
             }
         }
-        /* ZMIANA: Mniejsze ikony dla największych plansz */
         @media (min-width: 768px) {
             .level-mp-4 .card-face, .level-mp-5 .card-face {
                 font-size: 2.25rem;
@@ -123,7 +122,6 @@
             transform: rotateY(180deg);
         }
 
-        /* --- NOWA ANIMACJA: Dopasowanie Pary --- */
         @keyframes pulseMatch {
             0% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.1); opacity: 0.7; }
@@ -131,7 +129,7 @@
         }
         .card.is-matched {
             animation: pulseMatch 0.5s ease-in-out forwards;
-            opacity: 0.3; /* Stan końcowy z animacji */
+            opacity: 0.3; 
             cursor: default;
         }
 
@@ -164,7 +162,6 @@
             }
         }
         
-        /* ZMIANA: Zaktualizowane i dodane nowe siatki */
         @media (min-width: 640px) {
             #game-board.level-sp-3 { grid-template-columns: repeat(5, 1fr); }
             #game-board.level-sp-4 { grid-template-columns: repeat(6, 1fr); }
@@ -180,7 +177,6 @@
              #game-board.level-mp-5 { grid-template-columns: repeat(8, 1fr); }
         }
         
-        /* ZMIANA: Mniejsza siatka na mobile dla trudniejszych poziomów */
         @media (max-width: 419px) {
              .card { width: 70px; height: 70px; }
              #game-board { gap: 0.5rem; }
@@ -192,8 +188,28 @@
                  grid-template-columns: repeat(5, 1fr);
             }
         }
+        @media (max-width: 499px) {
+             #game-board.level-sp-4, /* 24 karty */
+             #game-board.level-mp-2, /* 24 karty */
+             #game-board.level-mp-4  /* 36 kart */ {
+                 grid-template-columns: repeat(6, 1fr);
+                 gap: 0.25rem;
+             }
+             #game-board.level-sp-4 .card,
+             #game-board.level-mp-2 .card,
+             #game-board.level-mp-4 .card {
+                width: 55px;
+                height: 55px;
+                font-size: 1.25rem;
+             }
+             #game-board.level-sp-4 .card-face,
+             #game-board.level-mp-2 .card-face,
+             #game-board.level-mp-4 .card-face {
+                font-size: 1.25rem;
+             }
+        }
         
-        /* --- Style dla Serc (Tryb 1 Gracza) --- */
+
         .heart-icon.lost {
             opacity: 0.2;
             transition: opacity 0.3s ease;
@@ -221,7 +237,6 @@
             transform: translateX(24px); /* 1.5rem */
         }
         
-        /* --- Style Wskaźnika Tury (Tryb 2 Graczy) --- */
         .player-score {
             transition: all 0.3s ease;
             border-bottom: 4px solid transparent;
@@ -234,7 +249,6 @@
             border-bottom-color: #0ea5e9; /* sky-500 */
         }
         
-        /* --- NOWE STYLE: Przełącznik Trybu Gry --- */
         .game-mode-button {
             background-color: #3f3f46; /* gray-700 */
             color: #d4d4d8; /* gray-300 */
@@ -245,13 +259,23 @@
             color: white;
             box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
         }
+        
+        /* --- NOWE STYLE: Konfetti --- */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 51; /* Nad modalem (50) */
+            pointer-events: none; /* Można klikać "przez" */
+        }
 
     </style>
 </head>
 <body class="text-white min-h-screen flex items-center justify-center p-4">
 
-    <!-- ZMIANA: Zwiększono max-w-xl do max-w-4xl dla największych plansz -->
-    <div class="w-full max-w-4xl mx-auto bg-gray-900/50 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-2xl">
+    <div class="w-full max-w-4xl mx-auto bg-gray-900/50 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-2xl z-10 relative">
         
         <div class="flex justify-center items-center mb-4 relative">
             <h1 class="text-4xl font-bold text-center">Gra Pamięciowa</h1>
@@ -316,7 +340,7 @@
 
     <!-- Modal Wygranej/Przegranej -->
     <div id="win-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50 modal-base">
-        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full transform transition-all scale-95 opacity-0" id="win-modal-content">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full transform transition-all scale-95 opacity-0 z-50" id="win-modal-content">
             <h2 id="modal-title" class="text-4xl font-bold text-sky-400 mb-4">Gratulacje!</h2>
             
             <p id="modal-highscore-message" class="text-lg text-yellow-400 mb-4 hidden"></p>
@@ -334,10 +358,9 @@
     
     <!-- Modal Ustawień -->
     <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50 modal-base">
-        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-95 opacity-0" id="settings-modal-content">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-95 opacity-0 z-50" id="settings-modal-content">
             <h2 class="text-3xl font-bold text-sky-400 mb-6">Ustawienia</h2>
             
-            <!-- NOWA SEKCJA: Wybór Trybu Gry -->
             <div class="mb-6">
                 <span class="text-xl text-gray-300 block mb-3 text-center">Tryb Gry</span>
                 <div class="flex justify-center space-x-4">
@@ -362,6 +385,9 @@
             </button>
         </div>
     </div>
+
+    <!-- NOWY ELEMENT: Canvas dla Konfetti -->
+    <canvas id="confetti-canvas"></canvas>
 
 
     <script>
@@ -408,6 +434,13 @@
             const settingsCloseButton = document.getElementById('settings-close-button');
             const modeSinglePlayerButton = document.getElementById('mode-single-player');
             const modeMultiPlayerButton = document.getElementById('mode-multi-player');
+            
+            // --- ZMIANA: Przeniesiono zmienne konfetti na górę ---
+            const confettiCanvas = document.getElementById('confetti-canvas');
+            const confettiCtx = confettiCanvas.getContext('2d');
+            let confettiParticles = [];
+            let confettiAnimationId = null; // Ustawienie na null zamiast undefined
+            const confettiColors = ['#0ea5e9', '#0bd1d1', '#f97316', '#eab308', '#dc2626', '#16a34a'];
 
 
             // === INICJALIZACJA DŹWIĘKU ===
@@ -489,6 +522,12 @@
                     modeMultiPlayerButton.classList.add('is-active-mode');
                 }
             }
+            
+            // ZMIANA: Przeniesiono funkcję resizeConfettiCanvas tutaj
+            function resizeConfettiCanvas() {
+                confettiCanvas.width = window.innerWidth;
+                confettiCanvas.height = window.innerHeight;
+            }
 
             function loadSettings() {
                 const savedMuteSetting = localStorage.getItem('memorySoundMuted');
@@ -501,7 +540,6 @@
             }
 
             // === KONFIGURACJA POZIOMÓW ===
-            // ZMIANA: Rozbudowano ikony do 20 na zestaw
             const themeIcons = {
                 nature: [
                     'fa-leaf', 'fa-seedling', 'fa-tree', 'fa-sun', 'fa-moon', 
@@ -535,13 +573,12 @@
                 ]
             };
             
-            // ZMIANA: Dwa osobne obiekty konfiguracji
             const levelConfigSingle = {
                 1: { pairs: 6,  theme: "Natura",    color: "#16a34a", icons: themeIcons.nature,    health: 5 },
                 2: { pairs: 8,  theme: "Transport", color: "#0ea5e9", icons: themeIcons.transport, health: 7 },
                 3: { pairs: 10, theme: "Zwierzęta", color: "#f97316", icons: themeIcons.animals,   health: 8 },
-                4: { pairs: 12, theme: "Jedzenie",  color: "#eab308", icons: themeIcons.food,      health: 9 }, // yellow-500
-                5: { pairs: 15, theme: "Sport",     color: "#dc2626", icons: themeIcons.sports,    health: 10 } // red-600
+                4: { pairs: 12, theme: "Jedzenie",  color: "#eab308", icons: themeIcons.food,      health: 11 },
+                5: { pairs: 15, theme: "Sport",     color: "#dc2626", icons: themeIcons.sports,    health: 14 }
             };
             
             const levelConfigMulti = {
@@ -563,7 +600,7 @@
                     const parsedScores = JSON.parse(storedScores);
                     highScores = { ...highScores, ...parsedScores };
                 }
-                for (let level in levelConfigSingle) { // Użyj configu SP
+                for (let level in levelConfigSingle) { 
                     if (!highScores[level]) highScores[level] = Infinity;
                 }
             }
@@ -595,12 +632,12 @@
             
             // === GŁÓWNA FUNKCJA TWORZENIA PLANSZY ===
             function createBoard() {
+                stopConfetti(); // Zatrzymaj konfetti, jeśli jest aktywne
                 gameBoard.innerHTML = '';
                 flippedCards = [];
                 matchedPairs = 0;
                 canFlip = true;
                 
-                // ZMIANA: Wybierz odpowiedni config
                 const config = (gameMode === 'single') ? levelConfigSingle[currentLevel] : levelConfigMulti[currentLevel];
                 
                 totalPairs = config.pairs;
@@ -613,7 +650,6 @@
                 
                 // --- Rozdzielenie logiki UI ---
                 if (gameMode === 'single') {
-                    // --- Ustawienia dla 1 Gracza ---
                     singlePlayerStatsPanel.classList.remove('hidden');
                     singlePlayerStatsPanel.classList.add('flex');
                     multiPlayerStatsPanel.classList.add('hidden');
@@ -631,7 +667,6 @@
                     updateHighScoreDisplay(); 
                     
                 } else {
-                    // --- Ustawienia dla 2 Graczy ---
                     singlePlayerStatsPanel.classList.add('hidden');
                     singlePlayerStatsPanel.classList.remove('flex');
                     multiPlayerStatsPanel.classList.remove('hidden');
@@ -644,13 +679,11 @@
                     mpLevelThemeEl.textContent = config.theme;
                 }
                 
-                // --- Ustawienia Siatki (Wspólne) ---
-                // ZMIANA: Dodano prefixy sp- i mp- do klas siatki
-                gameBoard.className = 'game-board'; // Resetuj klasy
+                gameBoard.className = 'game-board'; 
+                gameBoard.id = 'game-board'; 
                 const gridClass = `level-${gameMode === 'single' ? 'sp' : 'mp'}-${currentLevel}`;
                 gameBoard.classList.add(gridClass);
 
-                // --- Tworzenie Kart (Wspólne) ---
                 cardIcons.forEach(icon => {
                     const card = document.createElement('div');
                     card.classList.add('card');
@@ -714,7 +747,6 @@
                 const isMatch = cardOne.dataset.icon === cardTwo.dataset.icon;
                 
                 if (isMatch) {
-                    // --- Dopasowano Parę (Logika Wspólna) ---
                     cardOne.classList.add('is-matched');
                     cardTwo.classList.add('is-matched');
                     matchedPairs++;
@@ -736,7 +768,6 @@
                     }
                     
                 } else {
-                    // --- Nie Dopasowano Pary (Logika Wspólna) ---
                     if(soundsInitialized && !isMuted) synth.triggerAttackRelease(sounds.noMatch, '8n', Tone.now() + 0.1);
                     cardOne.classList.add('is-shaking');
                     cardTwo.classList.add('is-shaking');
@@ -851,7 +882,6 @@
 
             // === LOGIKA ZAKOŃCZENIA GRY (WSPÓLNA) ===
             function checkforWin() {
-                // ZMIANA: Sprawdź config zależnie od trybu
                 const config = (gameMode === 'single') ? levelConfigSingle[currentLevel] : levelConfigMulti[currentLevel];
                 if (matchedPairs === config.pairs) {
                     canFlip = false;
@@ -860,6 +890,7 @@
             }
 
             function showWinModal() {
+                startConfetti(); // URUCHOM KONFETTI
                 if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.win, '4n');
                 
                 modalTitle.classList.remove('text-red-500', 'text-yellow-400');
@@ -924,6 +955,7 @@
             }
             
             function handleModalClick() {
+                stopConfetti(); // Zatrzymaj konfetti po kliknięciu
                 if (gameMode === 'single' && isGameOver) {
                     isGameOver = false; 
                 } else if (currentLevel < maxLevel) {
@@ -939,7 +971,6 @@
             loadHighScores(); 
             createBoard();
             
-            // Oba przyciski resetu robią to samo
             spResetButton.addEventListener('click', createBoard);
             mpResetButton.addEventListener('click', createBoard);
             
@@ -957,6 +988,82 @@
                     closeSettingsModal();
                 }
             });
+
+            // === NOWA SEKCJA: Logika Konfetti ===
+            
+            function Particle() {
+                this.x = Math.random() * confettiCanvas.width;
+                this.y = Math.random() * -confettiCanvas.height - 20; // Start nad ekranem
+                this.size = Math.random() * 8 + 4;
+                this.velocityX = Math.random() * 6 - 3;
+                this.velocityY = Math.random() * 5 + 2;
+                this.gravity = 0.05;
+                this.color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                this.opacity = 1;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 4 - 2;
+            }
+
+            Particle.prototype.update = function() {
+                this.velocityY += this.gravity;
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+                this.rotation += this.rotationSpeed;
+                if (this.y > confettiCanvas.height) {
+                    this.y = Math.random() * -confettiCanvas.height - 20;
+                    this.x = Math.random() * confettiCanvas.width;
+                }
+            }
+
+            Particle.prototype.draw = function() {
+                confettiCtx.save();
+                confettiCtx.translate(this.x + this.size / 2, this.y + this.size / 2);
+                confettiCtx.rotate(this.rotation * Math.PI / 180);
+                confettiCtx.fillStyle = this.color;
+                confettiCtx.globalAlpha = this.opacity;
+                confettiCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                confettiCtx.restore();
+            }
+
+            function createConfettiBurst() {
+                for (let i = 0; i < 150; i++) {
+                    confettiParticles.push(new Particle());
+                }
+            }
+
+            function animateConfetti() {
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                confettiParticles.forEach((particle, index) => {
+                    particle.update();
+                    particle.draw();
+                    if (particle.y > confettiCanvas.height + 20) {
+                        // Zamiast usuwać, zresetuj pozycję u góry, aby uzyskać ciągły efekt
+                        particle.y = Math.random() * -confettiCanvas.height - 20;
+                        particle.x = Math.random() * confettiCanvas.width;
+                    }
+                });
+                confettiAnimationId = requestAnimationFrame(animateConfetti);
+            }
+
+            function startConfetti() {
+                if (confettiAnimationId) return; // Już działa
+                resizeConfettiCanvas();
+                confettiParticles = []; // Wyczyść stare
+                createConfettiBurst();
+                animateConfetti();
+            }
+
+            function stopConfetti() {
+                if (confettiAnimationId) {
+                    cancelAnimationFrame(confettiAnimationId);
+                    confettiAnimationId = null;
+                }
+                confettiParticles = [];
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            }
+
+            window.addEventListener('resize', resizeConfettiCanvas);
+            // --- Koniec Logiki Konfetti ---
 
         });
     </script>
