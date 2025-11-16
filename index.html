@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gra Pamięciowa</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Font Awesome (dla ikon na kartach) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
-    
+
     <!-- Tone.js (dla efektów dźwiękowych) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
 
@@ -34,13 +34,13 @@
         }
 
         /* --- Style Karty i Animacja 3D --- */
-        
+
         .card {
             width: 80px;
             height: 80px;
             perspective: 1000px;
             cursor: pointer;
-            flex-shrink: 0; 
+            flex-shrink: 0;
         }
         @media (min-width: 420px) {
             .card {
@@ -54,7 +54,6 @@
                 height: 100px;
             }
         }
-
 
         .card-inner {
             position: relative;
@@ -90,7 +89,7 @@
         .card-front {
             color: white;
         }
-        
+
         .card-back {
             background-color: #333;
             color: #fff;
@@ -107,11 +106,30 @@
           20%, 60% { transform: translateX(-6px); }
           40%, 80% { transform: translateX(6px); }
         }
-        
+
         .card.is-shaking {
           animation: shake 0.4s ease-in-out;
         }
 
+        /* NOWA ANIMACJA: Pulsowanie podczas oczekiwania */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .card.waiting-pulse {
+            animation: pulse 1s infinite;
+        }
+
+        /* NOWA ANIMACJA: Błysk przy dopasowaniu */
+        @keyframes flash {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.5); }
+            100% { filter: brightness(1); }
+        }
+        .card.is-flashing {
+            animation: flash 0.5s ease-out;
+        }
 
         .modal-base {
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -120,8 +138,10 @@
         #game-board {
             display: flex;
             flex-wrap: wrap;
-            justify-content: center; 
+            justify-content: center;
             gap: 0.75rem; /* 12px */
+            max-width: 500px; /* Nowa reguła: ograniczenie szerokości planszy */
+            margin: 0 auto; /* Wyśrodkowanie planszy */
         }
         @media (min-width: 500px) {
             #game-board {
@@ -130,7 +150,7 @@
                 gap: 1rem; /* 16px */
             }
         }
-        
+
         /* ZMIANA: Nowe siatki dla poziomów 3, 4 i 5 */
         @media (min-width: 640px) {
             #game-board.level-3 {
@@ -156,13 +176,12 @@
                  grid-template-columns: repeat(5, 1fr);
             }
         }
-        
 
         .heart-icon.lost {
             opacity: 0.2;
             transition: opacity 0.3s ease;
         }
-        
+
         @keyframes heart-regained {
             0% { transform: scale(1); opacity: 0.2; }
             50% { transform: scale(1.5); opacity: 1; color: #22c55e; } /* green-500 */
@@ -171,7 +190,7 @@
         .heart-icon.heart-regained {
             animation: heart-regained 0.5s ease-in-out;
         }
-        
+
         #sound-toggle {
             transition: background-color 0.3s ease;
         }
@@ -185,6 +204,29 @@
             transform: translateX(24px); /* 1.5rem */
         }
 
+        /* NOWY STYL: Tęczowy kolor dla nowego rekordu */
+        .rainbow-text {
+            background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 3s ease infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* NOWY STYL: Kolor tła planszy zależny od poziomu */
+        .game-board-bg {
+            transition: background-color 0.5s ease;
+        }
+        .bg-level-1 { background-color: #16a34a22; }
+        .bg-level-2 { background-color: #0ea5e922; }
+        .bg-level-3 { background-color: #f9731622; }
+        .bg-level-4 { background-color: #eab30822; }
+        .bg-level-5 { background-color: #dc262622; }
     </style>
 </head>
 <body class="text-white min-h-screen flex items-center justify-center p-4">
@@ -228,7 +270,7 @@
             </button>
         </div>
 
-        <div id="game-board">
+        <div id="game-board" class="game-board-bg">
             <!-- Karty będą generowane przez JavaScript -->
         </div>
     </div>
@@ -238,7 +280,7 @@
         <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full transform transition-all scale-95 opacity-0" id="win-modal-content">
             <h2 id="modal-title" class="text-4xl font-bold text-sky-400 mb-4">Gratulacje!</h2>
             
-            <p id="modal-highscore-message" class="text-lg text-yellow-400 mb-4 hidden"></p>
+            <p id="modal-highscore-message" class="text-lg mb-4"></p> <!-- Usunięto hidden, klasa dodawana dynamicznie -->
             
             <p id="modal-message" class="text-xl text-gray-300 mb-2">
                 Udało Ci się wygrać w <span id="modal-moves" class="font-bold text-white">0</span> ruchach!
@@ -311,13 +353,15 @@
                 gameOver: ['A2', 'E3', 'C3'],
                 gainHealth: ['C5', 'E5']
             };
-            
+
             async function initAudio() {
                 if (soundsInitialized || !window.Tone || isMuted) return;
                 try {
                     await Tone.start();
                     synth = new Tone.Synth().toDestination();
+                    synth.volume.value = -10; // Poziom głośności
                     polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                    polySynth.volume.value = -10; // Poziom głośności
                     soundsInitialized = true;
                 } catch (e) {
                     console.error("Nie można uruchomić audio:", e);
@@ -366,32 +410,32 @@
             // --- Koniec Funkcji Ustawień ---
 
 
-            // --- ZMIANA: Dodano motywy 'Jedzenie' i 'Sport' oraz ich ikony ---
+            // --- ZMIANA: Usunięto zbędne zapasowe ikony ---
             const themeIcons = {
                 nature: [
                     'fa-leaf', 'fa-seedling', 'fa-tree', 'fa-sun', 'fa-moon', 
                     'fa-cloud', 'fa-mountain', 'fa-water', 'fa-snowflake', 'fa-fire',
-                    'fa-bolt', 'fa-wind' // Dodano 2 zapasowe
+                    'fa-bolt', 'fa-wind'
                 ],
                 transport: [
                     'fa-car', 'fa-bicycle', 'fa-plane', 'fa-rocket', 'fa-ship', 
                     'fa-bus', 'fa-motorcycle', 'fa-train-tram', 'fa-helicopter', 'fa-truck',
-                    'fa-van-shuttle', 'fa-tractor' // Dodano 2 zapasowe
+                    'fa-van-shuttle', 'fa-tractor'
                 ],
                 animals: [
                     'fa-dog', 'fa-cat', 'fa-fish', 'fa-dove', 'fa-hippo', 
                     'fa-horse', 'fa-frog', 'fa-spider', 'fa-bugs', 'fa-otter',
-                    'fa-cow', 'fa-dragon' // Dodano 2 zapasowe
+                    'fa-cow', 'fa-dragon'
                 ],
                 food: [
                     'fa-pizza-slice', 'fa-burger', 'fa-hotdog', 'fa-ice-cream', 'fa-apple-whole',
                     'fa-carrot', 'fa-lemon', 'fa-pepper-hot', 'fa-cookie', 'fa-bacon',
-                    'fa-cheese', 'fa-egg', 'fa-martini-glass' // Dodano 3 zapasowe
+                    'fa-cheese', 'fa-egg'
                 ],
                 sports: [
                     'fa-futbol', 'fa-baseball', 'fa-basketball', 'fa-football', 'fa-volleyball',
                     'fa-table-tennis-paddle-ball', 'fa-bowling-ball', 'fa-person-swimming', 'fa-person-skiing', 'fa-person-biking',
-                    'fa-golf-ball-tee', 'fa-hockey-puck', 'fa-medal', 'fa-trophy', 'fa-stopwatch' // Dodano 5 zapasowych
+                    'fa-golf-ball-tee', 'fa-hockey-puck', 'fa-medal', 'fa-trophy', 'fa-stopwatch'
                 ]
             };
             
@@ -404,7 +448,6 @@
                 5: { pairs: 15, theme: "Sport",     color: "#dc2626", icons: themeIcons.sports,    health: 10 } // red-600
             };
             const maxLevel = 5; // ZMIANA
-            let currentLevel = 1;
 
             // --- Logika Rekordów (localStorage) ---
             let highScores = { 1: Infinity, 2: Infinity, 3: Infinity, 4: Infinity, 5: Infinity }; // ZMIANA
@@ -427,22 +470,25 @@
             }
 
             function updateHighScoreDisplay() {
-                const currentBest = highScores[currentLevel];
+                const currentBest = highScores[gameState.currentLevel];
                 bestScoreCountEl.textContent = (currentBest === Infinity) ? '-' : currentBest;
             }
             // --- Koniec logiki Rekordów ---
 
-            let maxHealth = 5; 
-            let currentHealth = maxHealth;
-            let isGameOver = false;
-
-            let cardIcons = [];
-            let flippedCards = []; 
-            let moves = 0;
-            let matchedPairs = 0;
-            let totalPairs = 0;
-            let canFlip = true; 
-            let comboStreak = 0;
+            // --- NOWY STAN GRY ---
+            const gameState = {
+                currentLevel: 1,
+                maxHealth: 5, 
+                currentHealth: 5,
+                cardIcons: [],
+                flippedCards: [], 
+                moves: 0,
+                matchedPairs: 0,
+                totalPairs: 0,
+                canFlip: true, 
+                isGameOver: false,
+                comboStreak: 0
+            };
 
             // --- Niezawodne tasowanie Fisher-Yates ---
             function shuffle(array) {
@@ -459,48 +505,53 @@
             // --- Funkcja: Tworzenie Planszy ---
             function createBoard() {
                 gameBoard.innerHTML = '';
-                flippedCards = [];
-                moves = 0;
-                matchedPairs = 0;
-                canFlip = true;
-                isGameOver = false;
-                comboStreak = 0; 
+                gameState.flippedCards = [];
+                gameState.moves = 0;
+                gameState.matchedPairs = 0;
+                gameState.canFlip = true;
+                gameState.isGameOver = false;
+                gameState.comboStreak = 0; 
 
-                const config = levelConfig[currentLevel];
-                maxHealth = config.health; 
-                currentHealth = maxHealth; 
+                const config = levelConfig[gameState.currentLevel];
+                gameState.maxHealth = config.health; 
+                gameState.currentHealth = gameState.maxHealth; 
                 
                 updateHealthDisplay();
                 
                 movesCountEl.textContent = '0';
                 
-                levelCountEl.textContent = currentLevel;
+                levelCountEl.textContent = gameState.currentLevel;
                 levelThemeEl.textContent = config.theme;
                 updateHighScoreDisplay(); 
 
-                totalPairs = config.pairs;
-                const iconsForLevel = config.icons.slice(0, totalPairs);
-                cardIcons = [...iconsForLevel, ...iconsForLevel];
+                gameState.totalPairs = config.pairs;
+                const iconsForLevel = config.icons.slice(0, gameState.totalPairs);
+                gameState.cardIcons = [...iconsForLevel, ...iconsForLevel];
 
                 winModal.classList.add('opacity-0', 'invisible');
                 winModalContent.classList.add('scale-95', 'opacity-0');
 
-                shuffle(cardIcons); 
+                // --- NOWE: Zmiana klas tła planszy ---
+                gameBoard.className = 'game-board-bg'; // Reset klas
+                gameBoard.classList.add(`bg-level-${gameState.currentLevel}`);
+
+                shuffle(gameState.cardIcons); 
 
                 // ZMIANA: Logika dodawania klas siatki
                 gameBoard.classList.remove('level-3', 'level-4', 'level-5');
-                if (currentLevel === 3) {
+                if (gameState.currentLevel === 3) {
                     gameBoard.classList.add('level-3');
-                } else if (currentLevel === 4) {
+                } else if (gameState.currentLevel === 4) {
                     gameBoard.classList.add('level-4');
-                } else if (currentLevel === 5) {
+                } else if (gameState.currentLevel === 5) {
                     gameBoard.classList.add('level-5');
                 }
                 
-                cardIcons.forEach(icon => {
+                gameState.cardIcons.forEach(icon => {
                     const card = document.createElement('div');
                     card.classList.add('card');
                     card.dataset.icon = icon; 
+                    card.dataset.state = 'closed'; // NOWE: Dodanie stanu
                     card.innerHTML = `
                         <div class="card-inner">
                             <div class="card-face card-front">
@@ -521,75 +572,96 @@
             function handleCardClick(event) {
                 if (!soundsInitialized && !isMuted) initAudio();
                 
-                if (!canFlip || isGameOver) return;
+                if (!gameState.canFlip || gameState.isGameOver) return;
                 const clickedCard = event.currentTarget;
                 if (clickedCard.classList.contains('is-flipped') || clickedCard.classList.contains('is-matched')) {
                     return;
                 }
                 
                 clickedCard.classList.add('is-flipped');
-                flippedCards.push(clickedCard);
+                clickedCard.dataset.state = 'flipped'; // NOWE: Ustawienie stanu
+                gameState.flippedCards.push(clickedCard);
                 
                 if(soundsInitialized && !isMuted) synth.triggerAttackRelease(sounds.flip, '8n');
                 
-                if (flippedCards.length === 2) {
-                    canFlip = false;
+                if (gameState.flippedCards.length === 2) {
+                    gameState.canFlip = false;
+                    // NOWE: Dodanie pulsowania do oczekujących kart
+                    gameState.flippedCards.forEach(c => c.classList.add('waiting-pulse'));
                     incrementMoves();
                     setTimeout(checkForMatch, 600);
                 }
             }
             
             function incrementMoves() {
-                moves++;
-                movesCountEl.textContent = moves;
+                gameState.moves++;
+                movesCountEl.textContent = gameState.moves;
             }
 
             // --- Funkcja: Sprawdzanie Pary (Zaktualizowana o Combo) ---
             function checkForMatch() {
-                const [cardOne, cardTwo] = flippedCards;
+                // NOWE: Usunięcie pulsowania
+                gameState.flippedCards.forEach(c => c.classList.remove('waiting-pulse'));
+
+                const [cardOne, cardTwo] = gameState.flippedCards;
                 if (cardOne.dataset.icon === cardTwo.dataset.icon) {
                     // Para!
-                    cardOne.classList.add('is-matched');
-                    cardTwo.classList.add('is-matched');
-                    matchedPairs++;
+                    cardOne.classList.add('is-matched', 'is-flashing');
+                    cardOne.dataset.state = 'matched';
+                    cardTwo.classList.add('is-matched', 'is-flashing');
+                    cardTwo.dataset.state = 'matched';
+
+                    // NOWE: Usunięcie błysku po animacji
+                    setTimeout(() => {
+                        cardOne.classList.remove('is-flashing');
+                        cardTwo.classList.remove('is-flashing');
+                    }, 500);
+
+                    gameState.matchedPairs++;
                     if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.match, '8n', Tone.now() + 0.1);
                     
-                    comboStreak++;
-                    if (comboStreak === 2) {
+                    gameState.comboStreak++;
+                    if (gameState.comboStreak === 2) {
                         gainHealth();
-                        comboStreak = 0; // Zresetuj combo po zdobyciu serca
+                        gameState.comboStreak = 0; // Zresetuj combo po zdobyciu serca
                     }
                     
                     checkforWin(); 
-                    flippedCards = []; 
-                    canFlip = true;
+                    gameState.flippedCards = []; 
+                    gameState.canFlip = true;
                 } else {
                     // Nie para - UTRATA ŻYCIA
-                    comboStreak = 0; // Zresetuj combo
+                    gameState.comboStreak = 0; // Zresetuj combo
                     loseHealth(); 
                     if(soundsInitialized && !isMuted) synth.triggerAttackRelease(sounds.noMatch, '8n', Tone.now() + 0.1);
                     
                     cardOne.classList.add('is-shaking');
                     cardTwo.classList.add('is-shaking');
                     
-                    if (!isGameOver) {
+                    if (!gameState.isGameOver) {
                         setTimeout(() => {
                             cardOne.classList.remove('is-shaking');
                             cardTwo.classList.remove('is-shaking');
                             cardOne.classList.remove('is-flipped');
+                            cardOne.dataset.state = 'closed';
                             cardTwo.classList.remove('is-flipped');
-                            flippedCards = []; 
-                            canFlip = true;
+                            cardTwo.dataset.state = 'closed';
+                            gameState.flippedCards = []; 
+                            gameState.canFlip = true;
                         }, 1000); 
                     }
                 }
             }
             
-            // --- NOWA FUNKCJA: Odzyskanie Życia ---
+            // --- NOWA FUNKCJA: Odzyskanie Życia (NAPRAWIONE) ---
             function gainHealth() {
-                if (currentHealth < maxHealth) {
-                    currentHealth++;
-                    
+                if (gameState.currentHealth < gameState.maxHealth) {
+                    gameState.currentHealth++;
+
+                    // Usuń klasę z wszystkich serc, aby uniknąć błędów
+                    const allHearts = healthDisplayEl.querySelectorAll('.heart-icon');
+                    allHearts.forEach(heart => heart.classList.remove('heart-regained'));
+
                     const firstLostHeart = healthDisplayEl.querySelector('.heart-icon.lost');
                     if (firstLostHeart) {
                         firstLostHeart.classList.add('heart-regained');
@@ -597,29 +669,33 @@
                     
                     if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.gainHealth, '8n', Tone.now() + 0.1);
 
+                    // Usuń klasę po zakończeniu animacji
                     setTimeout(() => {
-                        updateHealthDisplay(); 
+                        if (firstLostHeart) {
+                            firstLostHeart.classList.remove('heart-regained');
+                        }
+                        updateHealthDisplay(); // Upewnij się, że grafika się zgadza po animacji
                     }, 500);
                 }
             }
 
             // --- Funkcja: Utrata Życia ---
             function loseHealth() {
-                currentHealth--;
+                gameState.currentHealth--;
                 updateHealthDisplay();
-                if (currentHealth === 0) {
-                    isGameOver = true;
-                    canFlip = false;
+                if (gameState.currentHealth === 0) {
+                    gameState.isGameOver = true;
+                    gameState.canFlip = false;
                     setTimeout(showGameOverModal, 500);
                 }
             }
 
             function updateHealthDisplay() {
                 healthDisplayEl.innerHTML = '';
-                for (let i = 0; i < maxHealth; i++) {
+                for (let i = 0; i < gameState.maxHealth; i++) {
                     const heart = document.createElement('i');
                     heart.classList.add('fa-solid', 'fa-heart', 'heart-icon');
-                    if (i >= currentHealth) {
+                    if (i >= gameState.currentHealth) {
                         heart.classList.add('lost');
                     }
                     healthDisplayEl.appendChild(heart);
@@ -633,9 +709,10 @@
                 modalTitle.classList.remove('text-sky-400');
                 modalTitle.classList.add('text-red-500');
                 
-                modalMessage.textContent = `Zabrakło Ci żyć na poziomie ${currentLevel}.`;
+                modalMessage.textContent = `Zabrakło Ci żyć na poziomie ${gameState.currentLevel}.`;
                 modalSubmessage.textContent = "Chcesz spróbować jeszcze raz?";
                 modalHighScoreMessageEl.classList.add('hidden'); 
+                modalHighScoreMessageEl.classList.remove('rainbow-text'); // Usuń klasę z poprzedniego poziomu
                 
                 modalNextButton.textContent = "Spróbuj Ponownie";
                 modalNextButton.classList.remove('bg-sky-600', 'hover:bg-sky-700');
@@ -648,9 +725,9 @@
             }
 
             function checkforWin() {
-                if (isGameOver) return; 
-                if (matchedPairs === totalPairs) {
-                    canFlip = false;
+                if (gameState.isGameOver) return; 
+                if (gameState.matchedPairs === gameState.totalPairs) {
+                    gameState.canFlip = false;
                     setTimeout(showWinModal, 500); 
                 }
             }
@@ -659,17 +736,19 @@
                 if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.win, '4n');
                 
                 let newRecord = false;
-                if (moves < highScores[currentLevel]) {
-                    highScores[currentLevel] = moves;
+                if (gameState.moves < highScores[gameState.currentLevel]) {
+                    highScores[gameState.currentLevel] = gameState.moves;
                     saveHighScores();
                     newRecord = true;
                 }
                 updateHighScoreDisplay(); 
 
                 if (newRecord) {
-                    modalHighScoreMessageEl.textContent = `Nowy Rekord: ${moves} ruchów!`;
+                    modalHighScoreMessageEl.textContent = `Nowy Rekord: ${gameState.moves} ruchów!`;
+                    modalHighScoreMessageEl.classList.add('rainbow-text'); // NOWE: Tęczowy efekt
                 } else {
-                    modalHighScoreMessageEl.textContent = `Twój rekord: ${highScores[currentLevel]} ruchów.`;
+                    modalHighScoreMessageEl.textContent = `Twój rekord: ${highScores[gameState.currentLevel]} ruchów.`;
+                    modalHighScoreMessageEl.classList.remove('rainbow-text'); // Upewnij się, że nie ma efektu
                 }
                 modalHighScoreMessageEl.classList.remove('hidden');
 
@@ -678,11 +757,11 @@
                 modalNextButton.classList.remove('bg-red-600', 'hover:bg-red-700');
                 modalNextButton.classList.add('bg-sky-600', 'hover:bg-sky-700');
 
-                modalMessage.innerHTML = `Udało Ci się w <span class="font-bold text-white">${moves}</span> ruchach!`;
+                modalMessage.innerHTML = `Udało Ci się w <span class="font-bold text-white">${gameState.moves}</span> ruchach!`;
 
                 // ZMIANA: Zaktualizowano logikę dla 5 poziomów
-                if (currentLevel < maxLevel) {
-                    modalTitle.textContent = `Poziom ${currentLevel} ukończony!`;
+                if (gameState.currentLevel < maxLevel) {
+                    modalTitle.textContent = `Poziom ${gameState.currentLevel} ukończony!`;
                     modalSubmessage.textContent = "Gotowy na następne wyzwanie?";
                     modalNextButton.textContent = "Następny Poziom";
                 } else {
@@ -698,12 +777,12 @@
             }
             
             function handleModalClick() {
-                if (isGameOver) {
-                    isGameOver = false; 
-                } else if (currentLevel < maxLevel) {
-                    currentLevel++; 
+                if (gameState.isGameOver) {
+                    gameState.isGameOver = false; 
+                } else if (gameState.currentLevel < maxLevel) {
+                    gameState.currentLevel++; 
                 } else {
-                    currentLevel = 1; 
+                    gameState.currentLevel = 1; 
                 }
                 createBoard();
             }
@@ -730,3 +809,4 @@
     </script>
 </body>
 </html>
+
