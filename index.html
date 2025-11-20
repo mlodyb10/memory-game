@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gra Pamięciowa (1 i 2 Graczy)</title>
+    <title>Gra Pamięciowa</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,8 +25,9 @@
             background: linear-gradient(-45deg, #0f172a, #0c2a4c, #1a1a1a, #0c2a4c);
             background-size: 400% 400%;
             animation: ambientGradient 15s ease infinite;
-            /* Zapobiegaj przewijaniu, gdy canvas jest większy */
-            overflow: hidden; 
+            /* ZMIANA: Włączono przewijanie (było overflow: hidden) */
+            overflow-y: auto; 
+            min-height: 100vh;
         }
 
         @keyframes ambientGradient {
@@ -37,23 +38,26 @@
 
         /* --- Style Karty i Animacja 3D --- */
         
+        /* ZMIANA: Mniejsze karty domyślne dla lepszego dopasowania */
         .card {
-            width: 80px;
-            height: 80px;
+            width: 65px;
+            height: 65px;
             perspective: 1000px;
             cursor: pointer;
             flex-shrink: 0; 
         }
-        @media (min-width: 420px) {
+        
+        /* Skalowanie w górę dla większych ekranów */
+        @media (min-width: 380px) {
             .card {
-                width: 90px;
-                height: 90px;
+                width: 75px;
+                height: 75px;
             }
         }
         @media (min-width: 500px) {
             .card {
-                width: 100px;
-                height: 100px;
+                width: 90px;
+                height: 90px;
             }
         }
         @media (min-width: 768px) {
@@ -86,14 +90,14 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            -webkit-backface-visibility: hidden; /* Safari */
+            -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 0.5rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            font-size: 2rem;
+            font-size: 1.75rem; /* Mniejsza czcionka bazowa */
         }
         @media (min-width: 500px) {
             .card-face {
@@ -152,13 +156,14 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center; 
-            gap: 0.75rem; /* 12px */
+            gap: 0.5rem; /* Mniejszy odstęp bazowy */
+            margin-bottom: 2rem; /* Miejsce na dole na scroll */
         }
         @media (min-width: 500px) {
             #game-board {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
-                gap: 1rem; /* 16px */
+                gap: 1rem; 
             }
         }
         
@@ -177,35 +182,33 @@
              #game-board.level-mp-5 { grid-template-columns: repeat(8, 1fr); }
         }
         
-        @media (max-width: 419px) {
-             .card { width: 70px; height: 70px; }
-             #game-board { gap: 0.5rem; }
-             
-             #game-board.level-sp-4, #game-board.level-sp-5,
-             #game-board.level-mp-1, #game-board.level-mp-2, 
-             #game-board.level-mp-3, #game-board.level-mp-4, 
-             #game-board.level-mp-5 {
-                 grid-template-columns: repeat(5, 1fr);
-            }
-        }
+        /* ZMIANA: Responsywność dla małych ekranów */
         @media (max-width: 499px) {
-             #game-board.level-sp-4, /* 24 karty */
-             #game-board.level-mp-2, /* 24 karty */
-             #game-board.level-mp-4  /* 36 kart */ {
+             /* Ustawienia dla większych plansz na małych ekranach */
+             #game-board.level-sp-4, 
+             #game-board.level-mp-2,
+             #game-board.level-mp-4 {
+                 display: grid;
                  grid-template-columns: repeat(6, 1fr);
                  gap: 0.25rem;
              }
              #game-board.level-sp-4 .card,
              #game-board.level-mp-2 .card,
              #game-board.level-mp-4 .card {
-                width: 55px;
-                height: 55px;
-                font-size: 1.25rem;
+                width: 48px; /* Jeszcze mniejsze karty dla gęstych siatek */
+                height: 48px;
+                font-size: 1.2rem;
              }
-             #game-board.level-sp-4 .card-face,
-             #game-board.level-mp-2 .card-face,
-             #game-board.level-mp-4 .card-face {
-                font-size: 1.25rem;
+             
+             /* Poziom 5 (40 kart) na mobile */
+             #game-board.level-mp-5 {
+                 display: grid;
+                 grid-template-columns: repeat(5, 1fr);
+                 gap: 0.25rem;
+             }
+             #game-board.level-mp-5 .card {
+                 width: 55px;
+                 height: 55px;
              }
         }
         
@@ -260,95 +263,78 @@
             box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
         }
         
-        /* --- NOWE STYLE: Konfetti --- */
         #confetti-canvas {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 51; /* Nad modalem (50) */
-            pointer-events: none; /* Można klikać "przez" */
+            z-index: 51; 
+            pointer-events: none; 
         }
 
     </style>
 </head>
-<body class="text-white min-h-screen flex items-center justify-center p-4">
+<!-- ZMIANA: Dodano py-8 i min-h-screen aby umożliwić scrollowanie i centrowanie -->
+<body class="text-white min-h-screen flex flex-col items-center justify-center py-8 px-2">
 
     <div class="w-full max-w-4xl mx-auto bg-gray-900/50 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-2xl z-10 relative">
         
         <div class="flex justify-center items-center mb-4 relative">
-            <h1 class="text-4xl font-bold text-center">Gra Pamięciowa</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-center">Gra Pamięciowa</h1>
             <button id="settings-button" class="absolute right-0 top-0 p-2 text-gray-400 hover:text-white transition-colors" aria-label="Ustawienia">
                 <i class="fa-solid fa-gear text-2xl"></i>
             </button>
         </div>
         
-        <!-- === NOWY PANEL: Statystyki 1 Gracza (Domyślnie ukryty) === -->
-        <div id="single-player-stats" class="hidden flex-wrap justify-around items-center bg-gray-800/50 p-4 rounded-lg mb-6 shadow-lg gap-4">
-            <div class="text-lg text-center">
+        <div id="single-player-stats" class="hidden flex-wrap justify-around items-center bg-gray-800/50 p-3 rounded-lg mb-6 shadow-lg gap-3 text-sm sm:text-base">
+            <div class="text-center">
                 Poziom: 
-                <span id="sp-level-count" class="font-bold text-2xl text-sky-400">1</span>
-                <span id="sp-level-theme" class="block text-sm text-gray-400">Natura</span>
+                <span id="sp-level-count" class="font-bold text-xl text-sky-400">1</span>
+                <span id="sp-level-theme" class="block text-xs text-gray-400">Natura</span>
             </div>
-            <div class="text-lg text-center">
+            <div class="text-center">
                 Życia:
-                <div id="sp-health-display" class="flex justify-center space-x-1 mt-1 text-red-500 text-xl">
-                    <!-- Serca będą generowane przez JavaScript -->
-                </div>
+                <div id="sp-health-display" class="flex justify-center space-x-1 mt-1 text-red-500 text-lg"></div>
             </div>
-            <div class="text-lg text-center">
-                Ruchy: 
-                <span id="sp-moves-count" class="font-bold text-2xl text-sky-400">0</span>
+            <div class="text-center">
+                Ruchy: <span id="sp-moves-count" class="font-bold text-xl text-sky-400">0</span>
             </div>
-            <div class="text-lg text-center">
-                Rekord: 
-                <span id="sp-best-score-count" class="font-bold text-2xl text-yellow-400">-</span>
+            <div class="text-center">
+                Rekord: <span id="sp-best-score-count" class="font-bold text-xl text-yellow-400">-</span>
             </div>
-            <button id="sp-reset-button" class="px-5 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors shadow-md">
+            <button id="sp-reset-button" class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors shadow-md text-sm">
                 Resetuj
             </button>
         </div>
         
-        <!-- === NOWY PANEL: Statystyki 2 Graczy (Domyślnie ukryty) === -->
-        <div id="multi-player-stats" class="hidden flex-wrap justify-around items-center bg-gray-800/50 p-4 rounded-lg mb-6 shadow-lg gap-4">
-            <div id="player-1-panel" class="text-lg text-center player-score is-active-turn">
-                Gracz 1: 
-                <span id="player-1-score" class="font-bold text-2xl text-sky-400">0</span>
+        <div id="multi-player-stats" class="hidden flex-wrap justify-around items-center bg-gray-800/50 p-3 rounded-lg mb-6 shadow-lg gap-3 text-sm sm:text-base">
+            <div id="player-1-panel" class="text-center player-score is-active-turn">
+                Gracz 1: <span id="player-1-score" class="font-bold text-xl text-sky-400">0</span>
             </div>
             <div class="text-center">
-                <div class="text-lg">
-                    Poziom: 
-                    <span id="mp-level-count" class="font-bold text-2xl text-sky-400">1</span>
-                </div>
-                <span id="mp-level-theme" class="block text-sm text-gray-400">Natura</span>
+                <div>Poziom: <span id="mp-level-count" class="font-bold text-xl text-sky-400">1</span></div>
+                <span id="mp-level-theme" class="block text-xs text-gray-400">Natura</span>
             </div>
-            <button id="mp-reset-button" class="px-5 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors shadow-md">
+            <button id="mp-reset-button" class="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition-colors shadow-md text-sm">
                 Resetuj
             </button>
-            <div id="player-2-panel" class="text-lg text-center player-score">
-                Gracz 2: 
-                <span id="player-2-score" class="font-bold text-2xl text-red-500">0</span>
+            <div id="player-2-panel" class="text-center player-score">
+                Gracz 2: <span id="player-2-score" class="font-bold text-xl text-red-500">0</span>
             </div>
         </div>
 
-
         <div id="game-board">
-            <!-- Karty będą generowane przez JavaScript -->
+            <!-- Karty -->
         </div>
     </div>
 
     <!-- Modal Wygranej/Przegranej -->
-    <div id="win-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50 modal-base">
+    <div id="win-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50 modal-base">
         <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full transform transition-all scale-95 opacity-0 z-50" id="win-modal-content">
             <h2 id="modal-title" class="text-4xl font-bold text-sky-400 mb-4">Gratulacje!</h2>
-            
             <p id="modal-highscore-message" class="text-lg text-yellow-400 mb-4 hidden"></p>
-            
-            <p id="modal-message" class="text-xl text-gray-300 mb-6">
-                <!-- Treść generowana przez JS -->
-            </p>
-            
+            <p id="modal-message" class="text-xl text-gray-300 mb-6"></p>
             <p id="modal-submessage" class="text-gray-400 mb-6">Gotowy na kolejną rundę?</p>
             <button id="modal-next-button" class="w-full px-6 py-3 bg-sky-600 text-white font-bold text-lg rounded-lg hover:bg-sky-700 transition-colors shadow-lg">
                 Zagraj Ponownie
@@ -357,7 +343,7 @@
     </div>
     
     <!-- Modal Ustawień -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50 modal-base">
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 invisible z-50 modal-base">
         <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-95 opacity-0 z-50" id="settings-modal-content">
             <h2 class="text-3xl font-bold text-sky-400 mb-6">Ustawienia</h2>
             
@@ -386,28 +372,20 @@
         </div>
     </div>
 
-    <!-- NOWY ELEMENT: Canvas dla Konfetti -->
     <canvas id="confetti-canvas"></canvas>
-
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // === GŁÓWNE ELEMENTY UI ===
+            // Elementy UI
             const gameBoard = document.getElementById('game-board');
-            
-            // --- Panele Statystyk ---
             const singlePlayerStatsPanel = document.getElementById('single-player-stats');
             const multiPlayerStatsPanel = document.getElementById('multi-player-stats');
-
-            // --- Elementy UI 1 Gracza ---
             const spLevelCountEl = document.getElementById('sp-level-count');
             const spLevelThemeEl = document.getElementById('sp-level-theme');
             const spHealthDisplayEl = document.getElementById('sp-health-display');
             const spMovesCountEl = document.getElementById('sp-moves-count');
             const spBestScoreCountEl = document.getElementById('sp-best-score-count');
             const spResetButton = document.getElementById('sp-reset-button');
-
-            // --- Elementy UI 2 Graczy ---
             const player1Panel = document.getElementById('player-1-panel');
             const player1ScoreEl = document.getElementById('player-1-score');
             const player2Panel = document.getElementById('player-2-panel');
@@ -415,8 +393,6 @@
             const mpLevelCountEl = document.getElementById('mp-level-count');
             const mpLevelThemeEl = document.getElementById('mp-level-theme');
             const mpResetButton = document.getElementById('mp-reset-button');
-
-            // --- Modal Wygranej ---
             const winModal = document.getElementById('win-modal');
             const winModalContent = document.getElementById('win-modal-content');
             const modalTitle = document.getElementById('modal-title');
@@ -424,8 +400,6 @@
             const modalSubmessage = document.getElementById('modal-submessage');
             const modalNextButton = document.getElementById('modal-next-button');
             const modalHighScoreMessageEl = document.getElementById('modal-highscore-message');
-            
-            // --- Modal Ustawień ---
             const settingsButton = document.getElementById('settings-button');
             const settingsModal = document.getElementById('settings-modal');
             const settingsModalContent = document.getElementById('settings-modal-content');
@@ -434,143 +408,46 @@
             const settingsCloseButton = document.getElementById('settings-close-button');
             const modeSinglePlayerButton = document.getElementById('mode-single-player');
             const modeMultiPlayerButton = document.getElementById('mode-multi-player');
-            
-            // --- ZMIANA: Przeniesiono zmienne konfetti na górę ---
             const confettiCanvas = document.getElementById('confetti-canvas');
             const confettiCtx = confettiCanvas.getContext('2d');
+
+            // Zmienne konfetti
             let confettiParticles = [];
-            let confettiAnimationId = null; // Ustawienie na null zamiast undefined
+            let confettiAnimationId = null;
             const confettiColors = ['#0ea5e9', '#0bd1d1', '#f97316', '#eab308', '#dc2626', '#16a34a'];
 
-
-            // === INICJALIZACJA DŹWIĘKU ===
+            // Audio
             let soundsInitialized = false;
             let synth, polySynth;
             let isMuted = false; 
             const sounds = {
-                flip: 'C5',
-                match: ['E5', 'G5', 'C6'],
-                noMatch: 'C#4',
-                win: ['C4', 'E4', 'G4', 'C5'],
-                gameOver: ['A2', 'E3', 'C3'],
-                gainHealth: ['C5', 'E5']
+                flip: 'C5', match: ['E5', 'G5', 'C6'], noMatch: 'C#4', win: ['C4', 'E4', 'G4', 'C5'],
+                gameOver: ['A2', 'E3', 'C3'], gainHealth: ['C5', 'E5']
             };
             
             async function initAudio() {
                 if (soundsInitialized || !window.Tone || isMuted) return;
-                try {
-                    await Tone.start();
-                    synth = new Tone.Synth().toDestination();
-                    polySynth = new Tone.PolySynth(Tone.Synth).toDestination();
-                    soundsInitialized = true;
-                } catch (e) {
-                    console.error("Nie można uruchomić audio:", e);
-                }
+                try { await Tone.start(); synth = new Tone.Synth().toDestination(); polySynth = new Tone.PolySynth(Tone.Synth).toDestination(); soundsInitialized = true; } catch (e) {}
             }
 
-            // === LOGIKA USTAWIEŃ ===
-            let gameMode = 'single'; // 'single' lub 'multi'
+            // Ustawienia
+            let gameMode = 'single';
+            function openSettingsModal() { updateSettingsVisuals(); settingsModal.classList.remove('opacity-0', 'invisible'); setTimeout(() => settingsModalContent.classList.remove('scale-95', 'opacity-0'), 10); }
+            function closeSettingsModal() { settingsModalContent.classList.add('scale-95', 'opacity-0'); setTimeout(() => settingsModal.classList.add('opacity-0', 'invisible'), 300); }
+            function toggleSound() { isMuted = !isMuted; updateSoundToggleVisuals(); localStorage.setItem('memorySoundMuted', isMuted); if (!isMuted && !soundsInitialized) initAudio(); }
+            function setGameMode(newMode) { if (gameMode === newMode) return; gameMode = newMode; localStorage.setItem('memoryGameMode', gameMode); updateSettingsVisuals(); currentLevel = 1; createBoard(); }
+            function updateSoundToggleVisuals() { if (isMuted) soundToggle.classList.remove('is-active'); else soundToggle.classList.add('is-active'); }
+            function updateSettingsVisuals() { updateSoundToggleVisuals(); if (gameMode === 'single') { modeSinglePlayerButton.classList.add('is-active-mode'); modeMultiPlayerButton.classList.remove('is-active-mode'); } else { modeSinglePlayerButton.classList.remove('is-active-mode'); modeMultiPlayerButton.classList.add('is-active-mode'); } }
+            function loadSettings() { const savedMute = localStorage.getItem('memorySoundMuted'); isMuted = (savedMute === 'true'); const savedMode = localStorage.getItem('memoryGameMode'); gameMode = (savedMode === 'multi') ? 'multi' : 'single'; updateSettingsVisuals(); }
+            function resizeConfettiCanvas() { confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
 
-            function openSettingsModal() {
-                updateSettingsVisuals(); // Zaktualizuj przyciski przed otwarciem
-                settingsModal.classList.remove('opacity-0', 'invisible');
-                setTimeout(() => {
-                    settingsModalContent.classList.remove('scale-95', 'opacity-0');
-                }, 10);
-            }
-
-            function closeSettingsModal() {
-                settingsModalContent.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    settingsModal.classList.add('opacity-0', 'invisible');
-                }, 300);
-            }
-
-            function toggleSound() {
-                isMuted = !isMuted;
-                updateSoundToggleVisuals();
-                localStorage.setItem('memorySoundMuted', isMuted);
-                if (!isMuted && !soundsInitialized) initAudio();
-            }
-            
-            function setGameMode(newMode) {
-                if (gameMode === newMode) return; // Bez zmian
-                gameMode = newMode;
-                localStorage.setItem('memoryGameMode', gameMode);
-                updateSettingsVisuals();
-                currentLevel = 1; // Zawsze resetuj do poziomu 1 przy zmianie trybu
-                createBoard(); // Zrestartuj grę z nowym trybem
-            }
-
-            function updateSoundToggleVisuals() {
-                if (isMuted) {
-                    soundToggle.classList.remove('is-active');
-                } else {
-                    soundToggle.classList.add('is-active');
-                }
-            }
-            
-            function updateSettingsVisuals() {
-                // Dźwięk
-                updateSoundToggleVisuals();
-                // Tryb Gry
-                if (gameMode === 'single') {
-                    modeSinglePlayerButton.classList.add('is-active-mode');
-                    modeMultiPlayerButton.classList.remove('is-active-mode');
-                } else {
-                    modeSinglePlayerButton.classList.remove('is-active-mode');
-                    modeMultiPlayerButton.classList.add('is-active-mode');
-                }
-            }
-            
-            // ZMIANA: Przeniesiono funkcję resizeConfettiCanvas tutaj
-            function resizeConfettiCanvas() {
-                confettiCanvas.width = window.innerWidth;
-                confettiCanvas.height = window.innerHeight;
-            }
-
-            function loadSettings() {
-                const savedMuteSetting = localStorage.getItem('memorySoundMuted');
-                isMuted = (savedMuteSetting === 'true');
-                
-                const savedGameMode = localStorage.getItem('memoryGameMode');
-                gameMode = (savedGameMode === 'multi') ? 'multi' : 'single';
-                
-                updateSettingsVisuals();
-            }
-
-            // === KONFIGURACJA POZIOMÓW ===
+            // Ikony i Poziomy
             const themeIcons = {
-                nature: [
-                    'fa-leaf', 'fa-seedling', 'fa-tree', 'fa-sun', 'fa-moon', 
-                    'fa-cloud', 'fa-mountain', 'fa-water', 'fa-snowflake', 'fa-fire',
-                    'fa-bolt', 'fa-wind', 'fa-smog', 'fa-meteor', 'fa-icicles',
-                    'fa-hurricane', 'fa-volcano', 'fa-plant-wilt', 'fa-clover', 'fa-star'
-                ],
-                transport: [
-                    'fa-car', 'fa-bicycle', 'fa-plane', 'fa-rocket', 'fa-ship', 
-                    'fa-bus', 'fa-motorcycle', 'fa-train-tram', 'fa-helicopter', 'fa-truck',
-                    'fa-van-shuttle', 'fa-tractor', 'fa-taxi', 'fa-ambulance', 'fa-truck-moving',
-                    'fa-truck-pickup', 'fa-paper-plane', 'fa-caravan', 'fa-car-side', 'fa-sleigh'
-                ],
-                animals: [
-                    'fa-dog', 'fa-cat', 'fa-fish', 'fa-dove', 'fa-hippo', 
-                    'fa-horse', 'fa-frog', 'fa-spider', 'fa-bugs', 'fa-otter',
-                    'fa-cow', 'fa-dragon', 'fa-kiwi-bird', 'fa-shrimp', 'fa-crow',
-                    'fa-horse-head', 'fa-locust', 'fa-mosquito', 'fa-worm', 'fa-spider'
-                ],
-                food: [
-                    'fa-pizza-slice', 'fa-burger', 'fa-hotdog', 'fa-ice-cream', 'fa-apple-whole',
-                    'fa-carrot', 'fa-lemon', 'fa-pepper-hot', 'fa-cookie', 'fa-bacon',
-                    'fa-cheese', 'fa-egg', 'fa-martini-glass', 'fa-drumstick-bite', 'fa-candy-cane',
-                    'fa-mug-hot', 'fa-bread-slice', 'fa-plate-wheat', 'fa-stroopwafel', 'fa-whiskey-glass'
-                ],
-                sports: [
-                    'fa-futbol', 'fa-baseball', 'fa-basketball', 'fa-football', 'fa-volleyball',
-                    'fa-table-tennis-paddle-ball', 'fa-bowling-ball', 'fa-person-swimming', 'fa-person-skiing', 'fa-person-biking',
-                    'fa-golf-ball-tee', 'fa-hockey-puck', 'fa-medal', 'fa-trophy', 'fa-stopwatch',
-                    'fa-person-snowboarding', 'fa-person-skating', 'fa-person-running', 'fa-dumbbell', 'fa-mitten'
-                ]
+                nature: ['fa-leaf', 'fa-seedling', 'fa-tree', 'fa-sun', 'fa-moon', 'fa-cloud', 'fa-mountain', 'fa-water', 'fa-snowflake', 'fa-fire', 'fa-bolt', 'fa-wind', 'fa-smog', 'fa-meteor', 'fa-icicles', 'fa-hurricane', 'fa-volcano', 'fa-plant-wilt', 'fa-clover', 'fa-star'],
+                transport: ['fa-car', 'fa-bicycle', 'fa-plane', 'fa-rocket', 'fa-ship', 'fa-bus', 'fa-motorcycle', 'fa-train-tram', 'fa-helicopter', 'fa-truck', 'fa-van-shuttle', 'fa-tractor', 'fa-taxi', 'fa-ambulance', 'fa-truck-moving', 'fa-truck-pickup', 'fa-paper-plane', 'fa-caravan', 'fa-car-side', 'fa-sleigh'],
+                animals: ['fa-dog', 'fa-cat', 'fa-fish', 'fa-dove', 'fa-hippo', 'fa-horse', 'fa-frog', 'fa-spider', 'fa-bugs', 'fa-otter', 'fa-cow', 'fa-dragon', 'fa-kiwi-bird', 'fa-shrimp', 'fa-crow', 'fa-horse-head', 'fa-locust', 'fa-mosquito', 'fa-worm', 'fa-spider'],
+                food: ['fa-pizza-slice', 'fa-burger', 'fa-hotdog', 'fa-ice-cream', 'fa-apple-whole', 'fa-carrot', 'fa-lemon', 'fa-pepper-hot', 'fa-cookie', 'fa-bacon', 'fa-cheese', 'fa-egg', 'fa-martini-glass', 'fa-drumstick-bite', 'fa-candy-cane', 'fa-mug-hot', 'fa-bread-slice', 'fa-plate-wheat', 'fa-stroopwafel', 'fa-whiskey-glass'],
+                sports: ['fa-futbol', 'fa-baseball', 'fa-basketball', 'fa-football', 'fa-volleyball', 'fa-table-tennis-paddle-ball', 'fa-bowling-ball', 'fa-person-swimming', 'fa-person-skiing', 'fa-person-biking', 'fa-golf-ball-tee', 'fa-hockey-puck', 'fa-medal', 'fa-trophy', 'fa-stopwatch', 'fa-person-snowboarding', 'fa-person-skating', 'fa-person-running', 'fa-dumbbell', 'fa-mitten']
             };
             
             const levelConfigSingle = {
@@ -580,7 +457,6 @@
                 4: { pairs: 12, theme: "Jedzenie",  color: "#eab308", icons: themeIcons.food,      health: 11 },
                 5: { pairs: 15, theme: "Sport",     color: "#dc2626", icons: themeIcons.sports,    health: 14 }
             };
-            
             const levelConfigMulti = {
                 1: { pairs: 10, theme: "Natura",    color: "#16a34a", icons: themeIcons.nature },
                 2: { pairs: 12, theme: "Transport", color: "#0ea5e9", icons: themeIcons.transport },
@@ -588,356 +464,212 @@
                 4: { pairs: 18, theme: "Jedzenie",  color: "#eab308", icons: themeIcons.food },
                 5: { pairs: 20, theme: "Sport",     color: "#dc2626", icons: themeIcons.sports }
             };
-            
             const maxLevel = 5;
             let currentLevel = 1;
 
-            // === LOGIKA REKORDÓW (TYLKO 1 GRACZ) ===
+            // Rekordy
             let highScores = { 1: Infinity, 2: Infinity, 3: Infinity, 4: Infinity, 5: Infinity };
             function loadHighScores() {
-                const storedScores = localStorage.getItem('memoryHighScores');
-                if (storedScores) {
-                    const parsedScores = JSON.parse(storedScores);
-                    highScores = { ...highScores, ...parsedScores };
-                }
-                for (let level in levelConfigSingle) { 
-                    if (!highScores[level]) highScores[level] = Infinity;
-                }
+                const stored = localStorage.getItem('memoryHighScores');
+                if (stored) highScores = { ...highScores, ...JSON.parse(stored) };
+                for (let l in levelConfigSingle) if (!highScores[l]) highScores[l] = Infinity;
             }
-            function saveHighScores() {
-                localStorage.setItem('memoryHighScores', JSON.stringify(highScores));
-            }
+            function saveHighScores() { localStorage.setItem('memoryHighScores', JSON.stringify(highScores)); }
             function updateHighScoreDisplay() {
-                const currentBest = highScores[currentLevel];
-                spBestScoreCountEl.textContent = (currentBest === Infinity) ? '-' : currentBest;
+                const best = highScores[currentLevel];
+                spBestScoreCountEl.textContent = (best === Infinity) ? '-' : best;
             }
 
-            // === ZMIENNE STANU GRY (WSPÓLNE I SPECYFICZNE) ===
-            let cardIcons = [];
-            let flippedCards = []; 
-            let matchedPairs = 0;
-            let totalPairs = 0;
-            let canFlip = true; 
-            
-            // --- Stan 1 Gracza ---
-            let maxHealth = 5; 
-            let currentHealth = maxHealth;
-            let isGameOver = false;
-            let moves = 0;
-            let comboStreak = 0;
-            
-            // --- Stan 2 Graczy ---
-            let currentPlayer = 1;
-            let playerScores = { 1: 0, 2: 0 };
-            
-            // === GŁÓWNA FUNKCJA TWORZENIA PLANSZY ===
+            // Stan gry
+            let maxHealth = 5, currentHealth = 5, isGameOver = false;
+            let cardIcons = [], flippedCards = [], moves = 0, matchedPairs = 0, totalPairs = 0, canFlip = true, comboStreak = 0;
+            let currentPlayer = 1, playerScores = { 1: 0, 2: 0 };
+
+            function shuffle(array) {
+                let currentIndex = array.length, randomIndex;
+                while (currentIndex != 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+                }
+                return array;
+            }
+
             function createBoard() {
-                stopConfetti(); // Zatrzymaj konfetti, jeśli jest aktywne
+                stopConfetti();
                 gameBoard.innerHTML = '';
-                flippedCards = [];
-                matchedPairs = 0;
-                canFlip = true;
+                flippedCards = []; matchedPairs = 0; canFlip = true;
                 
                 const config = (gameMode === 'single') ? levelConfigSingle[currentLevel] : levelConfigMulti[currentLevel];
-                
                 totalPairs = config.pairs;
                 const iconsForLevel = config.icons.slice(0, totalPairs);
                 cardIcons = [...iconsForLevel, ...iconsForLevel];
                 shuffle(cardIcons);
-
+                
                 winModal.classList.add('opacity-0', 'invisible');
                 winModalContent.classList.add('scale-95', 'opacity-0');
                 
-                // --- Rozdzielenie logiki UI ---
                 if (gameMode === 'single') {
-                    singlePlayerStatsPanel.classList.remove('hidden');
-                    singlePlayerStatsPanel.classList.add('flex');
-                    multiPlayerStatsPanel.classList.add('hidden');
-                    multiPlayerStatsPanel.classList.remove('flex');
-                    
-                    isGameOver = false;
-                    comboStreak = 0;
-                    moves = 0;
+                    singlePlayerStatsPanel.classList.remove('hidden', 'flex'); singlePlayerStatsPanel.classList.add('flex');
+                    multiPlayerStatsPanel.classList.add('hidden'); multiPlayerStatsPanel.classList.remove('flex');
+                    isGameOver = false; comboStreak = 0; moves = 0;
                     spMovesCountEl.textContent = '0';
-                    maxHealth = config.health; 
-                    currentHealth = maxHealth; 
+                    maxHealth = config.health; currentHealth = maxHealth;
                     updateHealthDisplay();
                     spLevelCountEl.textContent = currentLevel;
                     spLevelThemeEl.textContent = config.theme;
-                    updateHighScoreDisplay(); 
-                    
+                    updateHighScoreDisplay();
                 } else {
-                    singlePlayerStatsPanel.classList.add('hidden');
-                    singlePlayerStatsPanel.classList.remove('flex');
-                    multiPlayerStatsPanel.classList.remove('hidden');
-                    multiPlayerStatsPanel.classList.add('flex');
-                    
-                    playerScores = { 1: 0, 2: 0 };
-                    currentPlayer = 1;
+                    singlePlayerStatsPanel.classList.add('hidden'); singlePlayerStatsPanel.classList.remove('flex');
+                    multiPlayerStatsPanel.classList.remove('hidden'); multiPlayerStatsPanel.classList.add('flex');
+                    playerScores = { 1: 0, 2: 0 }; currentPlayer = 1;
                     updateScoreboard();
                     mpLevelCountEl.textContent = currentLevel;
                     mpLevelThemeEl.textContent = config.theme;
                 }
                 
                 gameBoard.className = 'game-board'; 
-                gameBoard.id = 'game-board'; 
                 const gridClass = `level-${gameMode === 'single' ? 'sp' : 'mp'}-${currentLevel}`;
                 gameBoard.classList.add(gridClass);
 
                 cardIcons.forEach(icon => {
                     const card = document.createElement('div');
                     card.classList.add('card');
-                    card.dataset.icon = icon; 
-                    card.innerHTML = `
-                        <div class="card-inner">
-                            <div class="card-face card-front">
-                                <i class="fa-solid fa-question"></i>
-                            </div>
-                            <div class="card-face card-back">
-                                <i class="fa-solid ${icon}"></i>
-                            </div>
-                        </div>
-                    `;
+                    card.dataset.icon = icon;
+                    card.innerHTML = `<div class="card-inner"><div class="card-face card-front"><i class="fa-solid fa-question"></i></div><div class="card-face card-back"><i class="fa-solid ${icon}"></i></div></div>`;
                     card.querySelector('.card-front').style.backgroundColor = config.color;
                     card.addEventListener('click', handleCardClick);
                     gameBoard.appendChild(card);
                 });
             }
-            
-            // === TASOWANIE ===
-            function shuffle(array) {
-                let currentIndex = array.length,  randomIndex;
-                while (currentIndex != 0) {
-                    randomIndex = Math.floor(Math.random() * currentIndex);
-                    currentIndex--;
-                    [array[currentIndex], array[randomIndex]] = [
-                        array[randomIndex], array[currentIndex]];
-                }
-                return array;
-            }
 
-            // === LOGIKA KLIKNIĘCIA KARTY ===
             function handleCardClick(event) {
                 if (!soundsInitialized && !isMuted) initAudio();
-                
                 if (!canFlip || (gameMode === 'single' && isGameOver)) return;
-                
                 const clickedCard = event.currentTarget;
-                if (clickedCard.classList.contains('is-flipped') || clickedCard.classList.contains('is-matched')) {
-                    return;
-                }
+                if (clickedCard.classList.contains('is-flipped') || clickedCard.classList.contains('is-matched')) return;
                 
                 clickedCard.classList.add('is-flipped');
                 flippedCards.push(clickedCard);
-                
                 if(soundsInitialized && !isMuted) synth.triggerAttackRelease(sounds.flip, '8n');
                 
                 if (flippedCards.length === 2) {
-                    canFlip = false; 
-                    if (gameMode === 'single') {
-                        incrementMoves();
-                    }
+                    canFlip = false;
+                    if (gameMode === 'single') incrementMoves();
                     setTimeout(checkForMatch, 600);
                 }
             }
             
-            // === LOGIKA SPRAWDZANIA PARY (ROZDZIELONA) ===
+            function incrementMoves() { moves++; spMovesCountEl.textContent = moves; }
+
             function checkForMatch() {
                 const [cardOne, cardTwo] = flippedCards;
                 const isMatch = cardOne.dataset.icon === cardTwo.dataset.icon;
                 
                 if (isMatch) {
-                    cardOne.classList.add('is-matched');
-                    cardTwo.classList.add('is-matched');
+                    cardOne.classList.add('is-matched'); cardTwo.classList.add('is-matched');
                     matchedPairs++;
                     if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.match, '8n', Tone.now() + 0.1);
-                    flippedCards = []; 
-                    checkforWin(); 
+                    flippedCards = [];
+                    checkforWin();
                     
                     if (gameMode === 'single') {
                         comboStreak++;
-                        if (comboStreak === 2) {
-                            gainHealth();
-                            comboStreak = 0;
-                        }
+                        if (comboStreak === 2) { gainHealth(); comboStreak = 0; }
                         canFlip = true;
                     } else {
-                        playerScores[currentPlayer]++; 
-                        updateScoreboard(); 
-                        canFlip = true;
+                        playerScores[currentPlayer]++; updateScoreboard(); canFlip = true;
                     }
-                    
                 } else {
                     if(soundsInitialized && !isMuted) synth.triggerAttackRelease(sounds.noMatch, '8n', Tone.now() + 0.1);
-                    cardOne.classList.add('is-shaking');
-                    cardTwo.classList.add('is-shaking');
-
+                    cardOne.classList.add('is-shaking'); cardTwo.classList.add('is-shaking');
                     if (gameMode === 'single') {
-                        comboStreak = 0; 
-                        loseHealth(); 
-                        if (!isGameOver) {
-                            unflipCards(null);
-                        }
+                        comboStreak = 0; loseHealth();
+                        if (!isGameOver) unflipCards(null);
                     } else {
                         unflipCards(switchPlayer);
                     }
                 }
             }
 
-            function unflipCards(callbackOnEnd) {
+            function unflipCards(callback) {
                 setTimeout(() => {
-                    flippedCards.forEach(card => {
-                        card.classList.remove('is-shaking');
-                        card.classList.remove('is-flipped');
-                    });
-                    flippedCards = []; 
-                    if (callbackOnEnd) {
-                        callbackOnEnd();
-                    } else {
-                        canFlip = true;
-                    }
-                }, 1000); 
+                    flippedCards.forEach(c => { c.classList.remove('is-shaking', 'is-flipped'); });
+                    flippedCards = [];
+                    if (callback) callback(); else canFlip = true;
+                }, 1000);
             }
             
-            // === LOGIKA DLA 2 GRACZY ===
             function updateScoreboard() {
-                player1ScoreEl.textContent = playerScores[1];
-                player2ScoreEl.textContent = playerScores[2];
-                
-                if (currentPlayer === 1) {
-                    player1Panel.classList.add('is-active-turn');
-                    player2Panel.classList.remove('is-active-turn');
-                } else {
-                    player1Panel.classList.remove('is-active-turn');
-                    player2Panel.classList.add('is-active-turn');
-                }
+                player1ScoreEl.textContent = playerScores[1]; player2ScoreEl.textContent = playerScores[2];
+                if (currentPlayer === 1) { player1Panel.classList.add('is-active-turn'); player2Panel.classList.remove('is-active-turn'); }
+                else { player1Panel.classList.remove('is-active-turn'); player2Panel.classList.add('is-active-turn'); }
             }
-            
-            function switchPlayer() {
-                currentPlayer = (currentPlayer === 1) ? 2 : 1;
-                updateScoreboard();
-                canFlip = true;
-            }
+            function switchPlayer() { currentPlayer = (currentPlayer === 1) ? 2 : 1; updateScoreboard(); canFlip = true; }
 
-            // === LOGIKA DLA 1 GRACZA ===
-            function incrementMoves() {
-                moves++;
-                spMovesCountEl.textContent = moves;
-            }
-            
             function gainHealth() {
                 if (currentHealth < maxHealth) {
                     currentHealth++;
-                    const firstLostHeart = spHealthDisplayEl.querySelector('.heart-icon.lost');
-                    if (firstLostHeart) {
-                        firstLostHeart.classList.add('heart-regained');
-                    }
+                    const lost = spHealthDisplayEl.querySelector('.heart-icon.lost');
+                    if (lost) lost.classList.add('heart-regained');
                     if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.gainHealth, '8n', Tone.now() + 0.1);
                     setTimeout(updateHealthDisplay, 500);
                 }
             }
-
             function loseHealth() {
-                currentHealth--;
-                updateHealthDisplay();
-                if (currentHealth === 0) {
-                    isGameOver = true;
-                    canFlip = false;
-                    setTimeout(showGameOverModal, 500);
-                }
+                currentHealth--; updateHealthDisplay();
+                if (currentHealth === 0) { isGameOver = true; canFlip = false; setTimeout(showGameOverModal, 500); }
             }
-
             function updateHealthDisplay() {
                 spHealthDisplayEl.innerHTML = '';
                 for (let i = 0; i < maxHealth; i++) {
                     const heart = document.createElement('i');
                     heart.classList.add('fa-solid', 'fa-heart', 'heart-icon');
-                    if (i >= currentHealth) {
-                        heart.classList.add('lost');
-                    }
+                    if (i >= currentHealth) heart.classList.add('lost');
                     spHealthDisplayEl.appendChild(heart);
                 }
             }
             
             function showGameOverModal() {
                 if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.gameOver, '4n');
-
-                modalTitle.textContent = "Koniec Gry!";
-                modalTitle.classList.remove('text-sky-400', 'text-yellow-400');
-                modalTitle.classList.add('text-red-500');
-                
+                modalTitle.textContent = "Koniec Gry!"; modalTitle.className = "text-4xl font-bold text-red-500 mb-4";
                 modalMessage.textContent = `Zabrakło Ci żyć na poziomie ${currentLevel}.`;
                 modalSubmessage.textContent = "Chcesz spróbować jeszcze raz?";
-                modalHighScoreMessageEl.classList.add('hidden'); 
-                
+                modalHighScoreMessageEl.classList.add('hidden');
                 modalNextButton.textContent = "Spróbuj Ponownie";
-                modalNextButton.classList.remove('bg-sky-600', 'hover:bg-sky-700');
-                modalNextButton.classList.add('bg-red-600', 'hover:bg-red-700');
-
+                modalNextButton.className = "w-full px-6 py-3 bg-red-600 text-white font-bold text-lg rounded-lg hover:bg-red-700 transition-colors shadow-lg";
                 winModal.classList.remove('opacity-0', 'invisible');
-                setTimeout(() => {
-                    winModalContent.classList.remove('scale-95', 'opacity-0');
-                }, 10);
+                setTimeout(() => winModalContent.classList.remove('scale-95', 'opacity-0'), 10);
             }
 
-            // === LOGIKA ZAKOŃCZENIA GRY (WSPÓLNA) ===
             function checkforWin() {
                 const config = (gameMode === 'single') ? levelConfigSingle[currentLevel] : levelConfigMulti[currentLevel];
-                if (matchedPairs === config.pairs) {
-                    canFlip = false;
-                    setTimeout(showWinModal, 500); 
-                }
+                if (matchedPairs === config.pairs) { canFlip = false; setTimeout(showWinModal, 500); }
             }
 
             function showWinModal() {
-                startConfetti(); // URUCHOM KONFETTI
+                startConfetti();
                 if(soundsInitialized && !isMuted) polySynth.triggerAttackRelease(sounds.win, '4n');
                 
-                modalTitle.classList.remove('text-red-500', 'text-yellow-400');
-                modalTitle.classList.add('text-sky-400');
-                modalNextButton.classList.remove('bg-red-600', 'hover:bg-red-700');
-                modalNextButton.classList.add('bg-sky-600', 'hover:bg-sky-700');
+                modalTitle.className = "text-4xl font-bold text-sky-400 mb-4";
+                modalNextButton.className = "w-full px-6 py-3 bg-sky-600 text-white font-bold text-lg rounded-lg hover:bg-sky-700 transition-colors shadow-lg";
                 
                 if (gameMode === 'single') {
-                    // --- Modal dla 1 Gracza ---
-                    let newRecord = false;
-                    if (moves < highScores[currentLevel]) {
-                        highScores[currentLevel] = moves;
-                        saveHighScores();
-                        newRecord = true;
-                    }
-                    updateHighScoreDisplay(); 
-
-                    if (newRecord) {
-                        modalHighScoreMessageEl.textContent = `Nowy Rekord: ${moves} ruchów!`;
-                    } else {
-                        modalHighScoreMessageEl.textContent = `Twój rekord: ${highScores[currentLevel]} ruchów.`;
-                    }
+                    let newRec = false;
+                    if (moves < highScores[currentLevel]) { highScores[currentLevel] = moves; saveHighScores(); newRec = true; }
+                    updateHighScoreDisplay();
+                    modalHighScoreMessageEl.textContent = newRec ? `Nowy Rekord: ${moves} ruchów!` : `Twój rekord: ${highScores[currentLevel]} ruchów.`;
                     modalHighScoreMessageEl.classList.remove('hidden');
                     modalMessage.innerHTML = `Udało Ci się w <span class="font-bold text-white">${moves}</span> ruchach!`;
-
                 } else {
-                    // --- Modal dla 2 Graczy ---
-                    let winnerMessage = "";
-                    if (playerScores[1] > playerScores[2]) {
-                        winnerMessage = `<span class="font-bold text-sky-400">Gracz 1 wygrywa!</span><br>${playerScores[1]} do ${playerScores[2]}`;
-                        modalTitle.textContent = "Gratulacje, Gracz 1!";
-                    } else if (playerScores[2] > playerScores[1]) {
-                        winnerMessage = `<span class="font-bold text-red-500">Gracz 2 wygrywa!</span><br>${playerScores[2]} do ${playerScores[1]}`;
-                        modalTitle.textContent = "Gratulacje, Gracz 2!";
-                        modalTitle.classList.remove('text-sky-400');
-                        modalTitle.classList.add('text-red-500');
-                    } else {
-                        winnerMessage = `Remis! (${playerScores[1]} do ${playerScores[1]})`;
-                        modalTitle.textContent = "Niesamowite!";
-                        modalTitle.classList.remove('text-red-500');
-                        modalTitle.classList.add('text-yellow-400');
-                    }
-                    modalMessage.innerHTML = winnerMessage;
-                    modalHighScoreMessageEl.classList.add('hidden'); // Ukryj rekord
+                    let msg = "";
+                    if (playerScores[1] > playerScores[2]) { msg = `<span class="font-bold text-sky-400">Gracz 1 wygrywa!</span><br>${playerScores[1]} do ${playerScores[2]}`; modalTitle.textContent = "Gratulacje, Gracz 1!"; }
+                    else if (playerScores[2] > playerScores[1]) { msg = `<span class="font-bold text-red-500">Gracz 2 wygrywa!</span><br>${playerScores[2]} do ${playerScores[1]}`; modalTitle.textContent = "Gratulacje, Gracz 2!"; modalTitle.className = "text-4xl font-bold text-red-500 mb-4"; }
+                    else { msg = `Remis! (${playerScores[1]} do ${playerScores[1]})`; modalTitle.textContent = "Niesamowite!"; modalTitle.className = "text-4xl font-bold text-yellow-400 mb-4"; }
+                    modalMessage.innerHTML = msg;
+                    modalHighScoreMessageEl.classList.add('hidden');
                 }
 
-                // Ustaw tekst przycisku i tytuł (wspólne)
                 if (currentLevel < maxLevel) {
                     if (gameMode === 'single' && !isGameOver) modalTitle.textContent = `Poziom ${currentLevel} ukończony!`;
                     modalSubmessage.textContent = "Gotowi na następny poziom?";
@@ -947,124 +679,51 @@
                     modalSubmessage.textContent = "Ukończyłeś całą grę!";
                     modalNextButton.textContent = "Zagraj Ponownie";
                 }
-
                 winModal.classList.remove('opacity-0', 'invisible');
-                setTimeout(() => {
-                    winModalContent.classList.remove('scale-95', 'opacity-0');
-                }, 10);
+                setTimeout(() => winModalContent.classList.remove('scale-95', 'opacity-0'), 10);
             }
             
             function handleModalClick() {
-                stopConfetti(); // Zatrzymaj konfetti po kliknięciu
-                if (gameMode === 'single' && isGameOver) {
-                    isGameOver = false; 
-                } else if (currentLevel < maxLevel) {
-                    currentLevel++; 
-                } else {
-                    currentLevel = 1; 
-                }
+                stopConfetti();
+                if (gameMode === 'single' && isGameOver) isGameOver = false;
+                else if (currentLevel < maxLevel) currentLevel++;
+                else currentLevel = 1;
                 createBoard();
             }
 
-            // === INICJALIZACJA I LISTENERY ===
-            loadSettings(); 
-            loadHighScores(); 
-            createBoard();
-            
-            spResetButton.addEventListener('click', createBoard);
-            mpResetButton.addEventListener('click', createBoard);
-            
-            modalNextButton.addEventListener('click', handleModalClick);
-            
-            settingsButton.addEventListener('click', openSettingsModal);
-            settingsCloseButton.addEventListener('click', closeSettingsModal);
-            soundToggle.addEventListener('click', toggleSound);
-            
-            modeSinglePlayerButton.addEventListener('click', () => setGameMode('single'));
-            modeMultiPlayerButton.addEventListener('click', () => setGameMode('multi'));
-
-            settingsModal.addEventListener('click', (e) => {
-                if (e.target === settingsModal) {
-                    closeSettingsModal();
-                }
-            });
-
-            // === NOWA SEKCJA: Logika Konfetti ===
-            
+            // Konfetti
             function Particle() {
-                this.x = Math.random() * confettiCanvas.width;
-                this.y = Math.random() * -confettiCanvas.height - 20; // Start nad ekranem
-                this.size = Math.random() * 8 + 4;
-                this.velocityX = Math.random() * 6 - 3;
-                this.velocityY = Math.random() * 5 + 2;
-                this.gravity = 0.05;
-                this.color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
-                this.opacity = 1;
-                this.rotation = Math.random() * 360;
-                this.rotationSpeed = Math.random() * 4 - 2;
+                this.x = Math.random() * confettiCanvas.width; this.y = Math.random() * -confettiCanvas.height - 20;
+                this.size = Math.random() * 8 + 4; this.velocityX = Math.random() * 6 - 3; this.velocityY = Math.random() * 5 + 2;
+                this.gravity = 0.05; this.color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                this.opacity = 1; this.rotation = Math.random() * 360; this.rotationSpeed = Math.random() * 4 - 2;
             }
-
             Particle.prototype.update = function() {
-                this.velocityY += this.gravity;
-                this.x += this.velocityX;
-                this.y += this.velocityY;
-                this.rotation += this.rotationSpeed;
-                if (this.y > confettiCanvas.height) {
-                    this.y = Math.random() * -confettiCanvas.height - 20;
-                    this.x = Math.random() * confettiCanvas.width;
-                }
+                this.velocityY += this.gravity; this.x += this.velocityX; this.y += this.velocityY; this.rotation += this.rotationSpeed;
+                if (this.y > confettiCanvas.height) { this.y = Math.random() * -confettiCanvas.height - 20; this.x = Math.random() * confettiCanvas.width; }
             }
-
             Particle.prototype.draw = function() {
-                confettiCtx.save();
-                confettiCtx.translate(this.x + this.size / 2, this.y + this.size / 2);
-                confettiCtx.rotate(this.rotation * Math.PI / 180);
-                confettiCtx.fillStyle = this.color;
-                confettiCtx.globalAlpha = this.opacity;
-                confettiCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-                confettiCtx.restore();
+                confettiCtx.save(); confettiCtx.translate(this.x + this.size/2, this.y + this.size/2); confettiCtx.rotate(this.rotation * Math.PI/180);
+                confettiCtx.fillStyle = this.color; confettiCtx.globalAlpha = this.opacity; confettiCtx.fillRect(-this.size/2, -this.size/2, this.size, this.size); confettiCtx.restore();
             }
-
-            function createConfettiBurst() {
-                for (let i = 0; i < 150; i++) {
-                    confettiParticles.push(new Particle());
-                }
-            }
-
             function animateConfetti() {
                 confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-                confettiParticles.forEach((particle, index) => {
-                    particle.update();
-                    particle.draw();
-                    if (particle.y > confettiCanvas.height + 20) {
-                        // Zamiast usuwać, zresetuj pozycję u góry, aby uzyskać ciągły efekt
-                        particle.y = Math.random() * -confettiCanvas.height - 20;
-                        particle.x = Math.random() * confettiCanvas.width;
-                    }
-                });
+                confettiParticles.forEach(p => { p.update(); p.draw(); });
                 confettiAnimationId = requestAnimationFrame(animateConfetti);
             }
-
-            function startConfetti() {
-                if (confettiAnimationId) return; // Już działa
-                resizeConfettiCanvas();
-                confettiParticles = []; // Wyczyść stare
-                createConfettiBurst();
-                animateConfetti();
-            }
-
-            function stopConfetti() {
-                if (confettiAnimationId) {
-                    cancelAnimationFrame(confettiAnimationId);
-                    confettiAnimationId = null;
-                }
-                confettiParticles = [];
-                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-            }
-
+            function startConfetti() { if (confettiAnimationId) return; resizeConfettiCanvas(); confettiParticles = []; for(let i=0; i<150; i++) confettiParticles.push(new Particle()); animateConfetti(); }
+            function stopConfetti() { if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId); confettiAnimationId = null; confettiParticles = []; confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height); }
             window.addEventListener('resize', resizeConfettiCanvas);
-            // --- Koniec Logiki Konfetti ---
 
+            // Inicjalizacja
+            loadSettings(); loadHighScores(); createBoard();
+            spResetButton.addEventListener('click', createBoard); mpResetButton.addEventListener('click', createBoard);
+            modalNextButton.addEventListener('click', handleModalClick);
+            settingsButton.addEventListener('click', openSettingsModal); settingsCloseButton.addEventListener('click', closeSettingsModal);
+            soundToggle.addEventListener('click', toggleSound);
+            modeSinglePlayerButton.addEventListener('click', () => setGameMode('single'));
+            modeMultiPlayerButton.addEventListener('click', () => setGameMode('multi'));
+            settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettingsModal(); });
         });
     </script>
 </body>
